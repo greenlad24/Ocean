@@ -20,3 +20,6 @@ Write `prototypes/<slug>/MARKET.md` with:
 - Prefer buyers with *published, repeatable* acquisition processes (publisher submission portals, hyper-casual testing programs) — those convert fastest for a new studio.
 - Distinguish the three revenue paths so the studio picks the right one per prototype: (a) **sell the IP/prototype outright**, (b) **license/co-dev with a publisher** for advance + royalties, (c) **work-for-hire** building prototypes to a client's brief.
 - If you cannot name a credible buyer, say so plainly — that's a signal to kill the concept.
+
+## Self-QA (mandatory)
+Before handing off market findings, self-check every number: is it from a primary/named source, or an estimate/rumor? Label each. Distinguish "a buyer segment exists" from "a specific buyer is committed" — only the latter supports a >90% confidence build. State your confidence (%) that a named buyer will actually pay, and what evidence would raise or lower it. If your buyer list is aspirational rather than contacted/committed, say so — do not let it be read as assured demand.

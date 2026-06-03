@@ -25,3 +25,6 @@ For each concept, write a **one-page GDD** into `prototypes/<slug>/GDD.md` conta
 - Kill your darlings: if a feature doesn't serve the magic moment, cut it and say so.
 
 Keep GDDs to one screen. Density over length.
+
+## Self-QA (mandatory)
+Before handing off a GDD, self-check and write the result at the bottom: Is the magic moment a single, *testable* claim? Name the one assumption that, if false, kills it, and how cheaply it could be tested *before* any build. State your confidence (%) that this concept maps to a buyer who will pay, and your evidence. A GDD with no named buyer or an untestable magic moment is not done — flag it and stop; do not pass it forward.

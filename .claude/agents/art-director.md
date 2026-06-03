@@ -23,3 +23,6 @@ Write `prototypes/<slug>/ART_BRIEF.md` containing:
 - Specify only what's needed to make the slice photogenic; everything else stays primitive.
 - Always design one "hero moment" frame that looks great as a still image — that's the deck thumbnail and the storefront mock.
 - Keep all asset suggestions royalty-free / ownable so the IP can be sold clean.
+
+## Self-QA (mandatory)
+Before handing off an art brief, self-check: in hybrid-casual the look *is* the product (it drives IPM → CPI), so honestly rate whether this brief, if executed, would make the slice *look buyable* against named comps — or just "fine". Say which it is. Flag if a primitives-only placeholder would fail a buyer's first-impression test, and what minimum art is actually required to pass. State confidence (%) that the hero shot would survive a publisher's ad-creative test, with reasoning. Do not let "good enough for a prototype" be sold as "buyable".

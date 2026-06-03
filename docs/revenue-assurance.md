@@ -11,7 +11,7 @@ You cannot get to 90% revenue assurance on a *speculative* prototype. Spec IP �
 
 > We do not build and then look for a buyer. We secure the buyer (or a structured paying program), *then* build.
 
-This is a deliberate, profitable constraint. It trades lottery-ticket upside for a near-guaranteed paycheck per build. We keep a tiny, separately-budgeted "moonshot" lane (see bottom) so we don't lose all upside — but the **core studio only builds Tier A work.**
+This is a deliberate, profitable constraint. It trades lottery-ticket upside for a near-guaranteed paycheck per build. Per the **non-negotiable rules in CLAUDE.md, there is no moonshot lane and no exceptions**: if confidence isn't >90% in writing, we don't build — we sell first or we kill it. The studio builds Tier A work only.
 
 ## Revenue Assurance Score (RAS)
 
@@ -35,16 +35,16 @@ RAS is built from five factors. Score each 0–100, then RAS = the **weighted pr
 |---|---|---|---|
 | **A. Work-for-hire / co-dev with signed contract + deposit** | **90–98%** | Payment is a contractual obligation; deposit de-risks cash; we build to a brief so there's no "test we can fail" | **PRIMARY — this is the studio's bread and butter** |
 | **B. Structured publisher prototype-testing programs** (hyper/hybrid-casual CPI tests) | **30–60%** | Repeatable process and real money, BUT each build is gated on hitting a CPI/retention bar we can miss | **SECONDARY — only with a warm publisher relationship + portfolio approach to average out the hit rate** |
-| **C. Spec IP sale / prototype-funding pitches** (Steam slices, publisher submissions) | **5–20%** | High variance, selective, no payment until someone says yes | **MOONSHOT LANE ONLY — capped budget, never the core** |
+| **C. Spec IP sale / prototype-funding pitches** (Steam slices, publisher submissions) | **5–20%** | High variance, selective, no payment until someone says yes | **DO NOT BUILD — fails the >90% rule. Pitch only finished/owned assets, never a spec build** |
 
-**Conclusion the data will sharpen, but the logic already dictates:** the 90% rule means **Path A is the engine of the company.** Paths B and C are funded *out of Path A profits*, never out of runway.
+**Conclusion the data will sharpen, but the logic already dictates:** the 90% rule means **Path A is the engine of the company.** Path B is pursued only via a *standing* paying relationship (so the income is wage-like, not a gamble). Path C is **not a build path at all** under the non-negotiable rules — we never spend a build hour on it.
 
 ## How this changes our operating model
 
 1. **Sell first, build second.** `market-scout` + `deal-closer` secure a signed brief or a program slot *before* `prototype-engineer` writes a line of code.
 2. **Pipeline reorders:** Concept → **Secure buyer/contract (RAS gate)** → Design → Build → Deliver → Invoice. (See updated `sales-pipeline.md`.)
 3. **Build capacity is sold like a service.** We market "we prototype your game idea, fast, fixed-bid" — that demand is real and contract-backed.
-4. **The moonshot lane** gets ≤15% of capacity, funded only when runway > 3 months, so the studio can still own upside IP without betting the company.
+4. **QA gates the build.** Pre-build QA review (`playtest-qa`) + written >90% confidence (`finance-analyst`) are both required before a single build hour. No gates → no build. (There is no moonshot lane; that exception was removed by founder mandate.)
 
 ## RAS scorecard template (per prototype → `prototypes/<slug>/FINANCE.md`)
 

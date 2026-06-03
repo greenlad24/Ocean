@@ -8,6 +8,21 @@ We build **game prototypes** (mobile & PC), not finished games, and **sell them*
 ## The North Star
 Every action must trace to a prototype with a **named buyer** and a **positive expected margin**. No buyer or no margin → don't build it.
 
+## ⛔ NON-NEGOTIABLE RULES (override everything else)
+
+These two rules are absolute. No exceptions, no "bootstrap" carve-outs, no moonshot lane, no "just this once". If a rule blocks an action, the action does not happen.
+
+**RULE 1 — QA BEFORE BUILD, AND SELF-QA EVERY DECISION.**
+- Quality assurance happens *before* a build is started, never only after. A prototype may not enter the Build stage until it has passed a written pre-build QA review (assumptions tested, evidence checked, risks named).
+- *Every* sub-agent must self-QA its own work before handing it off: state assumptions, cite evidence, give a confidence %, and write down "what would make this wrong." An unchecked decision is not allowed to proceed. If an agent cannot QA its own claim, it must say so and stop, not guess.
+
+**RULE 2 — BUILD ONLY AT >90% CONFIDENCE OF REVENUE.**
+- We build a prototype only when written, evidenced confidence that it will generate revenue is **greater than 90%**. Below 90% → **do not build.** Period.
+- Per our research, >90% is realistically only reached when the prototype is **pre-sold**: a signed work-for-hire/co-dev brief + deposit, or an accepted slot in a structured paying program. Speculative "build it and hope a publisher bites" never qualifies.
+- The confidence number must be defended in writing (see `docs/revenue-assurance.md`) before any build hour is spent. No number, or a number below 90% → no build.
+
+**Enforcement:** `studio-head` refuses to route work to `prototype-engineer` without a ≥90% confidence sign-off from `finance-analyst` and a passed pre-build QA review from `playtest-qa`. Honoring these rules means most ideas never get built — that is the intended outcome.
+
 ## Where things live
 - `.claude/agents/` — the team.
 - `prototypes/<slug>/` — one folder per prototype. Standard contents:

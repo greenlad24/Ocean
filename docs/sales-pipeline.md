@@ -13,15 +13,16 @@ Per the **90%+ revenue-assurance rule** (`docs/revenue-assurance.md`), the core 
 | 0 | **Spark** | game-designer | A one-line hook + a named likely buyer type |
 | 1 | **Demand check** | market-scout | Hard market data shows the niche has real, current demand (Factor 4) |
 | 2 | **Secure buyer** | deal-closer + market-scout | A specific buyer is engaged: signed WFH/co-dev brief, PO, or accepted program slot |
-| 3 | **🚦 RAS GATE** | finance-analyst | **Revenue Assurance Score ≥ 90%** AND walk-away price set. Below 90 → moonshot lane or kill |
+| 3 | **🚦 RAS GATE** | finance-analyst | **Revenue Assurance Score > 90%** (written, evidenced) AND walk-away price set. **≤90% → KILL** (no moonshot lane, no exceptions) |
+| 3b | **🔍 PRE-BUILD QA** | playtest-qa | Written pre-build QA review passed: magic moment is testable, GDD assumptions are evidenced not guessed, cheapest kill-test identified. No sign-off → no build |
 | 4 | **Design** | game-designer | One-page GDD with a single, testable magic moment matched to the brief |
 | 5 | **Build** | prototype-engineer + art-director | Build runs; magic moment implemented; hero shot exists |
 | 6 | **Playtested** | playtest-qa | Magic moment lands; P0 bugs cleared; delivery-ready |
 | 7 | **Deliver & invoice** | deal-closer + finance-analyst | Buyer accepts deliverable; milestone/final payment invoiced & collected |
 | 8 | **Closed–Won / Closed–Lost** | deal-closer | Paid in full, OR logged loss with learnings |
 
-### Moonshot lane (Path C, capped ≤15% capacity)
-Spec IP prototypes that *can't* clear the RAS gate may still be built **only** when runway > 3 months, funded from profits not reserves. They follow the original build-then-pitch order and carry an explicit "this is a bet" label. They are never allowed to starve a Path A contract.
+### No moonshot lane (removed by founder mandate)
+There is no exception path. A prototype that cannot clear the >90% RAS gate **and** the pre-build QA review is **not built** — full stop. Speculative "build it and hope" work is forbidden regardless of runway. The only way a sub-90% idea ever ships is by first converting it into a >90% opportunity (sign a brief / secure a program slot), at which point it re-enters the gate legitimately.
 
 ## Customer acquisition channels
 - **Publisher submission portals** — most mobile/indie publishers have "submit your game" pages; fastest repeatable inbound.
@@ -35,7 +36,7 @@ Track every prototype as a row:
 
 | Prototype | Stage | Target buyer(s) | Walk-away $ | Expected value | Next action / owner |
 |---|---|---|---|---|---|
-| **bolt-up** | 6 Pitched (bootstrap/calling-card) | Rollic, Azur, iKame, Homa | $3.6k/iter or burn-rate +15% | Conversion asset (not booked) | Send outreach + hero GIF → deal-closer; on-device retention test → playtest-qa |
+| **bolt-up** | ⚠️ Retained as a process artifact — NOT greenlit | (n/a) | (n/a) | Scored 35% RAS → would be KILLED under the >90% rule | Do not pitch as a spec build; keep as a capability sample only |
 
 ## Rules of thumb
 - Kill fast: a prototype stuck >2 weeks at one stage with no progress is a NO-GO.
