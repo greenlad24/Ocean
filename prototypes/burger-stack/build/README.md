@@ -1,6 +1,6 @@
-# Burger Stack — playable build
+# Burger Stack — playable build (ordered assembly)
 
-Zero-install, browser-playable. Cable Sort's proven engine, reskinned as a burger-building diner game.
+Zero-install, browser-playable diner puzzle: read the order, stack the burger in the right order, serve the customer.
 
 > ⚠️ Spec / calling-card build under the standing **>90% exception** (gates RED, ~25–40% confidence) — see `../GDD.md`.
 
@@ -9,17 +9,20 @@ Zero-install, browser-playable. Cable Sort's proven engine, reskinned as a burge
 - **First launch** drops you straight into **Level 1** with a one-time onboarding (shown once, ever). `📊 → Reset save`, then reload, replays it.
 
 ## How to play
-Tap a plate to lift its top ingredient, tap another to drop it on a **matching** ingredient (or an empty plate). Gather **4 of the same** → it's **prepped** and stacks onto the burger (top of screen) in recipe order. Prep every ingredient → **the burger assembles in front of you**, then a **happy customer 😄** is served. Get stuck → **sad customer 😞**.
+- The **order ticket** (top-left) shows the customer's burger: bottom bun first → top bun last. **Level 1 = bun, patty, bun.**
+- Tap a **plate** to lift its top ingredient; tap another plate to set it down (matching ingredient, or an empty plate = a buffer).
+- Tap the **serving plate** (on the counter) to add the ingredient — only if it's the **next** the order needs.
+- Build the burger in order → **serve → coins → 😄**. Get jammed → **😞** (grab a Spare Plate to continue).
 
-## What's special
-- **End-of-level assembly animation** — when you solve it, the burger resets and **rebuilds layer-by-layer** (drop + thud + sizzle) before the result is revealed.
-- **Customer mood** — a face beside the burger goes sad → content → happy as the burger comes together.
-- Code-drawn ingredients (buns/patty/cheese/lettuce/tomato), synthesized audio — no asset files.
+## What's in it (your requests)
+- **Ordered assembly** — the customer wants a specific burger; only the correct order serves.
+- **Restaurant scene** at the top — awning, window, OPEN sign, clock, counter, the seated **customer**, the pinned **order ticket**, and the **serving plate**.
+- **Colourblind-safe ingredients** — each has a **distinct shape** (bun base, bumpy patty, dripping cheese, frilly lettuce, round tomato, sesame top bun), not just colour.
 
-## Systems (carried over, tested)
-Endless solvable generator · sealed-when-complete plates · combo/“sizzle” momentum + 🔥 combo bonus · lives, daily streak, coins, diner-upgrade meta · boosters (Undo / Spare Plate / Hint) · monetization (rewarded video, capped interstitials, IAP store) · 📊 publisher metrics.
+## Systems (carried over)
+Endless **solver-verified** levels · lives · daily streak · coins · diner-upgrade meta · boosters (Undo / Spare Plate / Hint — Hint uses the real solver) · monetization (rewarded video, capped interstitials, IAP) · 📊 publisher metrics.
 
 ## QA
-- `node verify_levels.mjs` — generator fuzz, **0 unsolvable** across 100+ levels (same engine as Cable Sort).
-- `node smoke_test.mjs` — real game JS on a DOM/audio shim, **both boot paths** (new-player onboarding + returning-player menu incl. home-phase null-guard): **16/16, no exceptions**.
-- *Not yet covered headlessly:* the end-of-level **assembly finale** (can't force a level-solve from the shim) — confirm it in a real browser.
+- `node verify_levels.mjs` — fuzz-proves the ordered-assembly generator is **always solvable** (BFS solver), ≤12 items/board.
+- `node smoke_test.mjs` — real game JS on a DOM/audio shim, **3 scenarios / 16 checks**: new-player onboarding + auto Level 1, returning-player menu + home-phase null-guard, and a **solver-driven full playthrough → serve → win**. No exceptions.
+- Still worth a real-browser look for feel/layout (headless can't judge readability).

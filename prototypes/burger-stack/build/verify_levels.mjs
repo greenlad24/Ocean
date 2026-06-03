@@ -1,76 +1,81 @@
-// QA-FIRST: fuzz-test the Cable Sort level generator + solver before the game
-// is built on it. Generator must NEVER emit an unsolvable board.
-// Run: node verify_levels.mjs  (exit 0 = all solvable). Mirrored in index.html.
-const CAP = 4;
+// QA-FIRST: ordered-assembly burger core + solver. Proves every generated
+// level is solvable BEFORE the UI is built on it. Mirrored in index.html.
+// Rules: dig the TOP ingredient off any plate -> move it onto another plate
+// (empty, or same-type top = buffer) OR onto the SERVING plate if it is the
+// NEXT ingredient the recipe needs. Build the whole recipe in order to serve a
+// burger. Serve K burgers to win the level. Run: node verify_levels.mjs
+const CAP = 5;                 // max height of a source/buffer plate
 const rnd = n => Math.floor(Math.random() * n);
-const clone = rods => rods.map(r => r.slice());
 
-const top = r => (r.length ? r[r.length - 1] : -1);
-const isComplete = r => r.length === CAP && r.every(c => c === r[0]);
-const won = rods => rods.every(r => r.length === 0 || isComplete(r));
-
-function canMove(rods, from, to) {
-  if (from === to) return false;
-  const s = rods[from], d = rods[to];
-  if (!s.length) return false;
-  if (isComplete(s)) return false;            // powered outlets are sealed (locked)
-  if (d.length >= CAP || isComplete(d)) return false;
-  if (d.length === 0) return true;
-  return top(d) === top(s);
+// ingredient types (recipe order space): 0 bottom bun,1 patty,2 cheese,3 lettuce,4 tomato,5 top bun
+function recipeFor(level){
+  const mids=[1,2,3,4];
+  const nm=Math.min(1+Math.floor((level-1)/2),4);     // L1:1 ... L7+:4 fillings
+  const r=[0];
+  for(let i=0;i<nm;i++) r.push(mids[i]);
+  if(level>=5) r.splice(2,0,1);                        // a double patty on bigger orders
+  r.push(5);
+  return r;
 }
-function applyMove(rods, from, to) {
-  const n = clone(rods);
-  n[to].push(n[from].pop());
-  return n;
-}
-const ser = rods => rods.map(r => r.join(',')).join('|');
+function kFor(level,R){ let k=Math.min(1+Math.floor((level-1)/3),3); while(k*R>12 && k>1) k--; return k; } // cap total items
 
-function solvable(start, cap = 150000) {
-  const seen = new Set([ser(start)]);
-  const st = [clone(start)];
-  let n = 0;
-  while (st.length) {
-    const rods = st.pop();
-    if (++n > cap) return false;
-    if (won(rods)) return true;
-    for (let a = 0; a < rods.length; a++)
-      for (let b = 0; b < rods.length; b++)
-        if (canMove(rods, a, b)) {
-          const nx = applyMove(rods, a, b), k = ser(nx);
-          if (!seen.has(k)) { seen.add(k); st.push(nx); }
+const top=p=>p.length?p[p.length-1]:-1;
+const ser=(plates,prog,served)=>plates.map(p=>p.join(',')).join('|')+'#'+prog+'#'+served;
+
+function solvable(plates0,recipe,K,cap=300000){
+  const R=recipe.length;
+  const start={plates:plates0.map(p=>p.slice()),prog:0,served:0};
+  const seen=new Set([ser(start.plates,start.prog,start.served)]);
+  const st=[start]; let n=0;
+  while(st.length){
+    const {plates,prog,served}=st.pop();
+    if(++n>cap) return false;
+    if(served>=K) return true;
+    for(let f=0;f<plates.length;f++){
+      const t=top(plates[f]); if(t<0) continue;
+      // (a) place on the serving plate if it's the next required ingredient
+      if(t===recipe[prog]){
+        const np=plates.map(p=>p.slice()); np[f].pop();
+        let prog2=prog+1, served2=served;
+        if(prog2===R){ served2++; prog2=0; }
+        const k=ser(np,prog2,served2); if(!seen.has(k)){ seen.add(k); st.push({plates:np,prog:prog2,served:served2}); }
+      }
+      // (b) buffer: move onto an empty plate or one whose top matches
+      for(let d=0;d<plates.length;d++){
+        if(d===f) continue;
+        if(plates[d].length>=CAP) continue;
+        if(plates[d].length===0 || top(plates[d])===t){
+          const np=plates.map(p=>p.slice()); np[d].push(np[f].pop());
+          const k=ser(np,prog,served); if(!seen.has(k)){ seen.add(k); st.push({plates:np,prog,served}); }
         }
+      }
+    }
   }
   return false;
 }
 
-// generator (identical to index.html)
-function genLevel(idx) {
-  const colors = Math.min(3 + Math.floor((idx - 1) / 4), 6);
-  const empties = idx > 12 ? 1 : 2;
-  const steps = 14 + idx * 3;
-  const solved = () => {
-    const r = [];
-    for (let c = 0; c < colors; c++) r.push(Array.from({ length: CAP }, () => c));
-    for (let e = 0; e < empties; e++) r.push([]);
-    return r;
-  };
-  for (let attempt = 0; attempt < 300; attempt++) {
-    let s = solved();
-    for (let i = 0; i < steps; i++) {
-      const srcs = s.map((r, j) => (r.length ? j : -1)).filter(j => j >= 0);
-      const from = srcs[rnd(srcs.length)];
-      const dsts = s.map((r, j) => (j !== from && r.length < CAP ? j : -1)).filter(j => j >= 0);
-      if (!dsts.length) continue;
-      s[dsts[rnd(dsts.length)]].push(s[from].pop());
-    }
-    if (!won(s) && solvable(s)) return s;
+function genLevel(level){
+  const recipe=recipeFor(level), R=recipe.length, K=kFor(level,R);
+  const items=[]; for(let k=0;k<K;k++) for(const t of recipe) items.push(t);
+  const total=items.length;
+  const cols=Math.max(2,Math.ceil(total/3));   // source columns (shallow-ish)
+  const empties=2;                              // buffer plates
+  for(let attempt=0;attempt<500;attempt++){
+    const sh=items.slice(); for(let i=sh.length-1;i>0;i--){const j=rnd(i+1);[sh[i],sh[j]]=[sh[j],sh[i]];}
+    const plates=Array.from({length:cols+empties},()=>[]);
+    for(const it of sh){ const open=[]; for(let i=0;i<cols;i++) if(plates[i].length<CAP) open.push(i); plates[open[rnd(open.length)]].push(it); }
+    if(solvable(plates,recipe,K)) return {plates,recipe,K};
   }
-  return solved();
+  return null;
 }
 
-const N = 100;
-let fails = 0;
-for (let i = 1; i <= N; i++) if (!solvable(genLevel(i))) { console.log(`level ${i}: UNSOLVABLE`); fails++; }
-console.log(`Generated & checked ${N} cable levels (difficulty 1..${N}). unsolvable: ${fails}`);
-console.log(fails === 0 ? '\nGENERATOR ALWAYS SOLVABLE ✅' : '\nBROKEN ❌');
-process.exit(fails === 0 ? 0 : 1);
+const N=60; let fails=0, maxItems=0;
+for(let i=1;i<=N;i++){
+  const lv=genLevel(i);
+  if(!lv){ console.log(`level ${i}: GENERATION FAILED`); fails++; continue; }
+  const items=lv.plates.reduce((a,p)=>a+p.length,0); maxItems=Math.max(maxItems,items);
+  if(!solvable(lv.plates,lv.recipe,lv.K)){ console.log(`level ${i}: UNSOLVABLE`); fails++; }
+}
+console.log(`Checked ${N} levels. recipe L1=[${recipeFor(1)}] (bun,patty,bun). max items on a board: ${maxItems}. failures: ${fails}`);
+console.log(fails===0 ? '\nORDERED-ASSEMBLY GENERATOR ALWAYS SOLVABLE ✅' : '\nBROKEN ❌');
+process.exit(fails===0?0:1);
