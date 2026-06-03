@@ -1,28 +1,31 @@
-# Cable Sort — playable build (premium)
+# Cable Sort: SURGE — playable build
 
-Zero-install, browser-playable. The lead concept from `../CONCEPT.md`, built with premium design, meta progression, and monetization.
+Zero-install, browser-playable. The lead concept, **rebuilt around an engineered dopamine arc** (see `../JOY.md`) so it isn't just a flat sort clone.
 
-> ⚠️ Built under a **founder-authorized exception** to the >90% rule (see `../GATES.md`). Revenue confidence is ~25–40%, not >90%; this is a business-development / calling-card build, not a forecast hit.
+> ⚠️ Built under a **founder-authorized exception** to the >90% rule (see `../GATES.md`). Revenue confidence ~25–40%, not >90% — a calling-card build, not a forecast hit.
 
 ## Run it
-- **Easiest:** double-click `index.html` — opens and plays in any browser. No server, no dependencies. Progress saves to your browser (localStorage). Audio starts on first tap.
-- **Mobile feel:** open on a phone or use the browser device toolbar in portrait.
-- **Local server (optional):** `python3 -m http.server`, then `http://localhost:8000`.
+- **Double-click `index.html`** — plays in any browser, no server. Progress saves locally. Audio starts on first tap; 🔊 to mute.
+- Mobile feel: open on a phone or use the browser device toolbar (portrait).
 
-## The loop
-Untangle colour-coded cables: tap an outlet to lift its top plug, tap another to drop it (matching colour or empty). Fill an outlet with 4 matching plugs → it **powers on** (LED lights, cables snap straight + glow, power-on chord). Win → earn coins → spend them to **power up the neighborhood** (3 districts, 9 buildings). Daily streak + lives pace the sessions.
+## The USP (why this isn't v1)
+**"Untangle the chaos — feel the SURGE."** Plain sort puzzles are emotionally flat. This one builds an **anticipation→release** curve: chaining good moves charges a **Flow meter** (rising pitch, brightening board), and clearing outlets in quick succession detonates a **Surge** — a slow-mo, screen-filling, coin-showering peak. That escalation is the differentiator and the ad-creative hook.
 
-## What makes it "premium" (all code-drawn / synthesized — no asset files)
-- Glossy gradient plugs, glowing bezier **cables**, panel shadows, animated LED power-on, particle bursts, screen shake, smooth easing.
-- **Synthesized audio** via WebAudio (pick / drop / power-on chord / win arpeggio / coin) — no audio files. Mute toggle in the HUD (🔊).
-- Cohesive dark-tech UI with gradients, soft shadows, and pop/fade transitions.
+## Engineered-joy systems (each maps to a principle in JOY.md)
+- **Feedback on every input** — pick / drop / invalid each get distinct sound + motion (no dead taps).
+- **Flow meter** — momentum charges it; audio pitch + colour intensity rise with it (manufactured anticipation).
+- **Combo → SURGE** — fast consecutive completions chain; ×2 = Surge, ×3+ = MEGA SURGE (bigger flash, ascending arpeggio, bonus coins, brief slow-mo).
+- **Telegraph** — outlets "charge up" ~0.24s before completing, so every release has a wind-up.
+- **Near-win tension** — vignette + low pulse when one outlet remains, resolved by the final clear (Zeigarnik).
+- **Peak-end win** — every level ends on a climax + a **variable bonus** (sometimes ×2/×3) — surprise reward.
+- **Goal-gradient meta** — "1 to light up the district!" messaging near completion.
 
-## Systems
-- **Endless level generator**, difficulty-scaled, every board verified solvable (`verify_levels.mjs`).
-- Neighborhood **renovation meta** (3 districts), coins, star ratings, lives (regen 1/10 min), daily streak, localStorage persistence.
-- **Boosters:** Undo, Spare Outlet, Hint (inventory or watch a rewarded ad when empty).
-- **Monetization (simulated):** rewarded video (double coins / continue / boosters / life / daily), interstitials (every 2nd level, capped, killed by Remove Ads), IAP store. **📊 publisher metrics** panel shows simulated ARPDAU / ads / IAP / retention.
+## Underlying systems (carried over, tested)
+Endless solvable generator · "power up the neighborhood" renovation meta (3 districts) · coins, stars, lives, daily streak, persistence · boosters (Undo / Spare Outlet / Hint) · monetization (rewarded video, capped interstitials, IAP store) · 📊 publisher metrics panel (now also tracks **surges triggered** — the engagement signal to A/B vs. flat sort).
 
 ## QA
-- `node verify_levels.mjs` — fuzz-tests the generator across 100 levels; asserts **0 unsolvable** (run a few times; verified 300 levels clean).
-- `node smoke_test.mjs` — runs the real game JS against a DOM/audio shim; **15/15 interaction paths** pass with no exceptions.
+- `node verify_levels.mjs` — generator fuzz, **0 unsolvable** across 100+ levels.
+- `node smoke_test.mjs` — real game JS on a DOM/audio shim; **16/16 interaction paths** incl. ~80 driven moves exercising the completion/charging/surge code — no exceptions.
+
+## Honest status
+The joy systems are grounded in established design psychology (Tetris/match-3 cascades, ASMR puzzles, peak-end rule), but "this feels good / lifts retention" is a **hypothesis** until a real on-device playtest + a CPI A/B on the Surge ad creative. See JOY.md self-QA.

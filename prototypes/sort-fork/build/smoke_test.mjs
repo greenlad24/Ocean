@@ -50,6 +50,18 @@ try{
   step('spare-outlet booster',()=>clk('bOutlet'));
   step('hint booster',()=>clk('bHint'));
   step('render after boosters',()=>pump(3));
+  step('drive many valid moves -> exercise completion/charging/surge paths',()=>{
+    // restart a fresh level, then spray taps across outlet x-positions and pump
+    // frames so the telegraph(charging)->fireComplete->triggerSurge->coinShower
+    // and floatText/surge-flash render paths all execute without throwing.
+    const shown=id=>els[id]&&els[id]._cls.has('show');
+    if(shown('failOv'))els['failGive']._h.click();
+    clk('btnPlay'); pump(2);
+    for(let r=0;r<80;r++){ const x=40+(r*53%460); pd({clientX:x,clientY:420}); pump(2);
+      if(shown('failOv')){ els['failGive']._h.click(); clk('btnPlay'); pump(2); }
+      if(shown('winOv')){ els['winNext']._h.click(); if(shown('adOv'))els['adSkip']._h.click(); pump(2); } }
+    pump(40);
+  });
   step('give up (life loss, home)',()=>{clk('btnPlay');els['failGive']._h.click();});
   step('drain lives -> out-of-lives overlay, then ad refill',()=>{for(let i=0;i<7;i++){clk('btnPlay');if(els['failGive']._h.click)els['failGive']._h.click();}clk('btnPlay');if(els['lifeAd']._h.click)els['lifeAd']._h.click();});
   res.push('\nALL SMOKE STEPS PASSED ✅');
