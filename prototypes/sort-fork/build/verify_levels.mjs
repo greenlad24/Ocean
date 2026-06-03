@@ -13,6 +13,7 @@ function canMove(rods, from, to) {
   if (from === to) return false;
   const s = rods[from], d = rods[to];
   if (!s.length) return false;
+  if (isComplete(s)) return false;            // powered outlets are sealed (locked)
   if (d.length >= CAP || isComplete(d)) return false;
   if (d.length === 0) return true;
   return top(d) === top(s);

@@ -167,7 +167,7 @@
   const top=r=>r.length?r[r.length-1]:-1;
   const isComplete=r=>r.length===CAP&&r.every(c=>c===r[0]);
   const won=rods=>rods.every(r=>r.length===0||isComplete(r));
-  function canMove(rods,from,to){ if(from===to)return false; const s=rods[from],d=rods[to]; if(!s.length)return false; if(d.length>=CAP||isComplete(d))return false; if(d.length===0)return true; return top(d)===top(s); }
+  function canMove(rods,from,to){ if(from===to)return false; const s=rods[from],d=rods[to]; if(!s.length)return false; if(isComplete(s))return false; if(d.length>=CAP||isComplete(d))return false; if(d.length===0)return true; return top(d)===top(s); }
   const ser=rods=>rods.map(r=>r.join(',')).join('|');
   function solvable(start,cap=120000){ const seen=new Set([ser(start)]); const st=[clone(start)]; let n=0;
     while(st.length){ const rods=st.pop(); if(++n>cap)return false; if(won(rods))return true;
@@ -273,22 +273,26 @@
   let flow=0,combo=0,lastComplete=-9,surgeT=0,surgeBig=false,comboTextT=0,tensionT=0,charging=null,dtScale=1,floatTexts=[];
 
   function startLevel(){ regen(); if(S.lives<=0){ openLife(); return; } const rods=genLevel(S.level); const n=rods.reduce((a,r)=>a+r.length,0);
-    G={rods,sel:-1,moves:0,par:Math.round(n*1.5),hist:[],hint:null,hintT:0,wc:0,surges:0}; anims=[];parts=[];shake=0;locked=false;glow={};
+    const numColors=Math.max(...rods.flat())+1;
+    G={rods,sel:-1,moves:0,par:Math.round(n*1.5),hist:[],hint:null,hintT:0,wc:0,surges:0,numColors,delivered:{},devGlow:{},ship:[]}; anims=[];parts=[];shake=0;locked=false;glow={};
     flow=0;combo=0;lastComplete=-9;surgeT=0;comboTextT=0;tensionT=0;charging=null;dtScale=1;floatTexts=[];
     $('home').classList.remove('show'); $('stage').style.display='block'; refreshB(); resize(); }
   function exitHome(lose){ if(lose){ S.lives=Math.max(0,S.lives-1); if(S.lives===LIFE_MAX-1)S.lifeStamp=Date.now(); save(); } $('stage').style.display='none'; $('home').classList.add('show'); renderHome(); }
   function refreshB(){ [['undo','cUndo'],['outlet','cOutlet'],['hint','cHint']].forEach(([k,id])=>{ const n=S.b[k]; const e=$(id); e.textContent=n>0?n:'AD'; e.className='cnt'+(n>0?'':' zero'); }); }
   function snap(){ G.hist.push(clone(G.rods)); if(G.hist.length>50)G.hist.shift(); }
 
-  function relayout(){ const W=cv.width/DPR,H=cv.height/DPR,n=G.rods.length; const margin=Math.min(W*0.05,26); const gap=(W-margin*2)/n; const sw=Math.min(gap*0.66,64); const slot=Math.min(sw*0.62,(H*0.44)/CAP); const baseY=H*0.72; L={W,H,margin,gap,sw,slot,baseY,topY:baseY-slot*CAP-16}; }
+  function relayout(){ const W=cv.width/DPR,H=cv.height/DPR,n=G.rods.length; const margin=Math.min(W*0.05,26); const gap=(W-margin*2)/n; const sw=Math.min(gap*0.66,58); const slot=Math.min(sw*0.58,(H*0.38)/CAP); const baseY=H*0.85;
+    const nc=G.numColors||3; const bgap=(W-margin*2)/nc; const bw=Math.min(bgap*0.6,52);
+    L={W,H,margin,gap,sw,slot,baseY,topY:baseY-slot*CAP-14, devY:H*0.13, boxY:H*0.27, bgap, bw}; }
   const colX=i=>L.margin+L.gap*(i+0.5);
+  const boxX=c=>L.margin+L.bgap*(c+0.5);
   const plugY=k=>L.baseY-k*L.slot-L.slot/2;
   function anyMove(){ for(let a=0;a<G.rods.length;a++)for(let b=0;b<G.rods.length;b++) if(canMove(G.rods,a,b))return true; return false; }
   function findHint(){ for(let a=0;a<G.rods.length;a++)for(let b=0;b<G.rods.length;b++) if(canMove(G.rods,a,b))return[a,b]; return null; }
   function unsortedCount(){ return G.rods.filter(r=>r.length&&!isComplete(r)).length; }
 
-  function tap(px,py){ if(locked||!G||surgeT>0)return; let i=-1; for(let k=0;k<G.rods.length;k++){ const x=colX(k); if(px>=x-L.gap/2&&px<x+L.gap/2){i=k;break;} } if(i<0)return;
-    if(G.sel<0){ if(G.rods[i].length){ G.sel=i; sfx.pick(flow); } return; }
+  function tap(px,py){ if(locked||!G||surgeT>0||charging)return; let i=-1; for(let k=0;k<G.rods.length;k++){ const x=colX(k); if(px>=x-L.gap/2&&px<x+L.gap/2){i=k;break;} } if(i<0)return;
+    if(G.sel<0){ if(G.rods[i].length&&!isComplete(G.rods[i])){ G.sel=i; sfx.pick(flow); } return; }
     if(i===G.sel){ G.sel=-1; return; }
     if(canMove(G.rods,G.sel,i)){ doMove(G.sel,i); G.sel=-1; } else { sfx.bad(); shake=Math.max(shake,4); flow=Math.max(0,flow*0.7); G.sel=G.rods[i].length?i:-1; } }
 
@@ -300,6 +304,7 @@
     else { if(won(G.rods)){ setTimeout(onWin,360); } else if(!anyMove()){ setTimeout(()=>show('failOv'),240); } } }
   function fireComplete(ri){ const now=t0; if(now-lastComplete<2.4) combo++; else combo=1; lastComplete=now;
     glow[ri]=1; shake=Math.max(shake,8+combo*2); sfx.complete(combo); burst(ri,combo); flow=Math.min(1,flow+0.12);
+    const dc=G.rods[ri][0]; if(!G.delivered[dc]) G.ship.push({c:dc,fromX:colX(ri),fromY:plugY(1.2),t:0,dur:0.4}); // ship to the junction grid
     if(combo>=2){ triggerSurge(ri); }
     if(won(G.rods)){ setTimeout(onWin,420); return; }
     if(!anyMove()) setTimeout(()=>show('failOv'),260); }
@@ -307,6 +312,9 @@
     const bonus=10*combo; S.coins+=bonus; G.wc+=bonus; save(); hud();
     comboText((big?'⚡ MEGA SURGE ':'⚡ SURGE ')+'×'+combo+'!  +'+bonus+'🪙');
     coinShower(); }
+  function deliver(c){ G.delivered[c]=true; G.devGlow[c]=1; shake=Math.max(shake,6);     // junction box sealed -> device on the other side powers on
+    beep(740,.18,'triangle',.09); beep(1110,.14,'sine',.06);
+    for(let i=0;i<12;i++){ const yy=L.devY+Math.random()*(L.boxY-L.devY); parts.push({x:boxX(c)+(Math.random()*2-1)*6,y:yy,vx:(Math.random()*2-1)*26,vy:-50-Math.random()*70,life:0,max:.5+Math.random()*.3,c:i%2?LIGHT[c]:'#fff',s:1.6+Math.random()*2}); } }
 
   // boosters
   $('bUndo').onclick=()=>useB('undo',()=>{ if(!G.hist.length){toast('Nothing to undo');return false;} G.rods=G.hist.pop(); G.sel=-1; flow=Math.max(0,flow*0.7); return true; });
@@ -346,8 +354,10 @@
     ctx.save(); ctx.translate(ox,oy);
     ctx.fillStyle='#7e90ad'; ctx.font='700 13px sans-serif'; ctx.textAlign='left'; ctx.fillText('Level '+S.level,L.margin,24); ctx.textAlign='right'; ctx.fillText('Moves '+G.moves+' · par '+G.par,W-L.margin,24); ctx.textAlign='center';
     drawFlowBar();
+    drawGrid(dt);
     for(let i=0;i<G.rods.length;i++) drawOutlet(i,dt);
     for(const a of anims){ const e=easeOut(a.t/a.dur); const x=a.fx+(a.tx-a.fx)*e; const arc=Math.sin(e*Math.PI)*L.slot*1.7; const y=a.fy+(a.ty-a.fy)*e-arc; cable(x,y,colX(a.to),L.baseY+8,a.col,1); plug(x,y,a.col,true); }
+    for(const sh of G.ship){ const e=easeOut(sh.t/sh.dur); const x=sh.fromX+(boxX(sh.c)-sh.fromX)*e; const y=sh.fromY+(L.boxY-sh.fromY)*e-Math.sin(e*Math.PI)*44; plug(x,y,sh.c,true); }
     for(const p of parts){ const k=1-p.life/p.max; ctx.globalAlpha=Math.max(0,k); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,7); ctx.fill(); } ctx.globalAlpha=1;
     ctx.restore();
     // combo / surge text
@@ -359,6 +369,17 @@
     const g=ctx.createLinearGradient(margin,0,margin+w,0); g.addColorStop(0,'#ffb02e'); g.addColorStop(1,flow>0.85?'#fff':'#ffe6a8'); ctx.fillStyle=g; if(flow>0.85){ctx.shadowColor='#ffd36b';ctx.shadowBlur=12;} rr(margin,y,Math.max(2,w*flow),h,4); ctx.fill(); ctx.shadowBlur=0;
     if(combo>1){ ctx.fillStyle='#ffd36b'; ctx.font='900 12px sans-serif'; ctx.textAlign='left'; ctx.fillText('COMBO ×'+combo,margin,y+22); ctx.textAlign='center'; }
     ctx.fillStyle='#6a7896'; ctx.font='700 10px sans-serif'; ctx.textAlign='right'; ctx.fillText('FLOW',W-margin,y-3); ctx.textAlign='center'; }
+  function drawGrid(dt){ const nc=G.numColors; const powered=Object.keys(G.delivered).length;
+    ctx.fillStyle=powered>=nc?'#ffd36b':'#7e90ad'; ctx.font='900 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('⚡ POWER THE GRID  '+powered+' / '+nc, L.W/2, L.devY-24);
+    for(let c=0;c<nc;c++){ const dx=boxX(c), lit=!!G.delivered[c], dg=G.devGlow[c]||0, col=COLORS[c], bw=L.bw, by=L.boxY;
+      ctx.strokeStyle=lit?col:'#283350'; ctx.lineWidth=3; if(lit){ctx.shadowColor=col;ctx.shadowBlur=8+dg*22;} ctx.beginPath(); ctx.moveTo(dx,L.devY+11); ctx.lineTo(dx,by-bw*0.42); ctx.stroke(); ctx.shadowBlur=0;
+      ctx.beginPath(); ctx.arc(dx,L.devY,11,0,7); ctx.fillStyle=lit?LIGHT[c]:'#16203a'; if(lit){ctx.shadowColor=col;ctx.shadowBlur=16+dg*28;} ctx.fill(); ctx.shadowBlur=0; ctx.strokeStyle=lit?col:'#34415f'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#101a2e'; rr(dx-bw/2,by-bw*0.42,bw,bw*0.84,8); ctx.fill();
+      ctx.strokeStyle=lit?col:'#3a4760'; ctx.lineWidth=2; if(lit){ctx.shadowColor=col;ctx.shadowBlur=10+dg*14;} rr(dx-bw/2,by-bw*0.42,bw,bw*0.84,8); ctx.stroke(); ctx.shadowBlur=0;
+      if(lit){ for(let k=0;k<CAP;k++){ const px=dx+((k%2)?1:-1)*bw*0.22, py=by+(k<2?-bw*0.16:bw*0.16); ctx.beginPath(); ctx.arc(px,py,bw*0.12,0,7); ctx.fillStyle=col; ctx.fill(); } }
+      else { ctx.fillStyle='#26344f'; ctx.font='900 12px sans-serif'; ctx.fillText('?',dx,by+4); } }
+    for(const c in G.devGlow){ G.devGlow[c]-=dt*1.6; if(G.devGlow[c]<=0)delete G.devGlow[c]; } }
   function drawOutlet(i,dt){ const x=colX(i),rod=G.rods[i],{sw,slot,baseY,topY}=L,comp=isComplete(rod);
     if(glow[i]!==undefined){ glow[i]-=dt*1.4; if(glow[i]<=0)delete glow[i]; }
     const gl=glow[i]||0; const charge=(charging&&charging.ri===i)?charging.t/charging.dur:0;
@@ -386,6 +407,7 @@
     if(comboTextT>0){ comboTextT-=dt; if(comboTextT<=0) combo=0; }
     for(const ft of floatTexts) ft.t+=dt; floatTexts=floatTexts.filter(f=>f.t<f.max);
     if(charging){ charging.t+=sdt; if(charging.t>=charging.dur){ const ri=charging.ri; charging=null; fireComplete(ri); } }
+    if(G&&G.ship&&G.ship.length){ for(let i=G.ship.length-1;i>=0;i--){ const sh=G.ship[i]; sh.t+=sdt; if(sh.t>=sh.dur){ G.ship.splice(i,1); deliver(sh.c); } } }
     // near-win tension
     if(G && $('stage').style.display!=='none'){ const t=unsortedCount()===1 && !won(G.rods) && !locked; if(t){ tensionT=1; tenseTick+=dt; if(tenseTick>0.9){ tenseTick=0; sfx.tense(); } } else { tensionT=Math.max(0,tensionT-dt*3); tenseTick=0; } }
     for(let i=anims.length-1;i>=0;i--){ const a=anims[i]; a.t+=sdt; if(a.t>=a.dur){ anims.splice(i,1); settle(a); } }
