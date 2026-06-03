@@ -38,6 +38,7 @@ try{
   step('boot',()=>fn(document,window,localStorage,performance,requestAnimationFrame,setTimeout,setInterval,clearInterval,clearTimeout,confirm,console));
   const clk=id=>els[id]._h.click&&els[id]._h.click();
   step('daily shown on boot',()=>{if(!els['dailyOv']._cls.has('show'))throw new Error('daily not shown');});
+  step('render frames during HOME phase (G is null) — loop must survive',()=>pump(6));
   step('claim daily',()=>clk('dailyClaim'));
   step('shop open + buy (nested btn) + close',()=>{clk('btnShop');const b=els['shopList'].children[0].children[0];b._h.click();clk('shopClose');});
   step('metrics open/close',()=>{clk('btnMetrics');if(!els['metricsBody'].innerHTML)throw new Error('no metrics');clk('metricsClose');});

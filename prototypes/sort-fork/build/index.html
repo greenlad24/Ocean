@@ -390,7 +390,7 @@
     if(G && $('stage').style.display!=='none'){ const t=unsortedCount()===1 && !won(G.rods) && !locked; if(t){ tensionT=1; tenseTick+=dt; if(tenseTick>0.9){ tenseTick=0; sfx.tense(); } } else { tensionT=Math.max(0,tensionT-dt*3); tenseTick=0; } }
     for(let i=anims.length-1;i>=0;i--){ const a=anims[i]; a.t+=sdt; if(a.t>=a.dur){ anims.splice(i,1); settle(a); } }
     for(let i=parts.length-1;i>=0;i--){ const p=parts[i]; p.life+=sdt; p.x+=p.vx*sdt; p.y+=p.vy*sdt; p.vy+=440*sdt; if(p.life>=p.max)parts.splice(i,1); }
-    if(G.hintT>0) G.hintT-=dt;
+    if(G && G.hintT>0) G.hintT-=dt;
     if(G && $('stage').style.display!=='none' && L) frame(dt);
     htick+=dt; if(htick>1){ htick=0; if($('home').classList.contains('show')) hud(); }
     requestAnimationFrame(loop); }
