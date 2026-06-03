@@ -5,413 +5,606 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Bolt Up — Ocean Interactive prototype</title>
 <style>
-  html,body{margin:0;height:100%;background:#141a21;overflow:hidden;
+  :root{--bg:#1f2630;--panel:#222c38;--line:#3a4453;--ink:#f2f5f8;--dim:#9fb0c2;--gold:#ffb000;--blue:#3aa0ff;--green:#2ecc71;}
+  html,body{margin:0;height:100%;background:#141a21;overflow:hidden;color:var(--ink);
     font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
-  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
-  canvas{touch-action:none;display:block;}
-  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(10,14,18,.72);backdrop-filter:blur(3px);z-index:10;}
-  .card{background:#222c38;border:1px solid #3a4453;border-radius:18px;padding:26px 24px;
-    width:min(86vw,340px);text-align:center;color:#f2f5f8;box-shadow:0 20px 60px rgba(0,0,0,.5);}
-  .card h2{margin:.1em 0 .35em;font-size:24px;}
-  .card p{margin:.2em 0 1.1em;color:#aab4c0;font-size:15px;line-height:1.4;}
-  .btn{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;
-    padding:14px;margin:9px 0;font-size:16px;font-weight:700;cursor:pointer;color:#0d1217;}
-  .btn.primary{background:#ffb000;}
-  .btn.ad{background:#3aa0ff;color:#06121f;}
-  .btn.ghost{background:transparent;color:#8b95a2;font-weight:600;border:1px solid #39424f;}
-  .tag{display:inline-block;background:#2e3a48;color:#9fb0c2;font-size:11px;letter-spacing:.06em;
-    text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:10px;}
-  .note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:#5d6b7a;font-size:11px;z-index:5;}
+  #app{position:fixed;inset:0;max-width:520px;margin:0 auto;display:flex;flex-direction:column;}
+  /* top HUD */
+  #hud{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1a2129;border-bottom:1px solid var(--line);z-index:6;}
+  .pill{display:flex;align-items:center;gap:6px;background:#2a3440;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px;}
+  .pill small{color:var(--dim);font-weight:600;font-size:11px;}
+  .grow{flex:1;}
+  .ic{width:18px;height:18px;display:inline-block;}
+  .iconbtn{background:#2a3440;border:1px solid var(--line);border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;color:var(--ink);}
+  #stage{position:relative;flex:1;overflow:hidden;}
+  canvas{position:absolute;inset:0;touch-action:none;display:block;width:100%;height:100%;}
+  /* booster tray */
+  #tray{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:12px;z-index:4;}
+  .booster{position:relative;background:#2a3440;border:1px solid var(--line);border-radius:14px;padding:10px 14px;text-align:center;cursor:pointer;min-width:64px;}
+  .booster .lbl{font-size:11px;color:var(--dim);margin-top:2px;}
+  .booster .cnt{position:absolute;top:-7px;right:-7px;background:var(--green);color:#06210f;border-radius:999px;font-size:11px;font-weight:800;padding:1px 6px;}
+  .booster .cnt.zero{background:var(--blue);color:#06121f;}
+  /* screens / overlays */
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;z-index:8;background:var(--bg);}
+  .screen.show{display:flex;}
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,14,18,.74);backdrop-filter:blur(3px);z-index:12;}
+  .overlay.show{display:flex;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 20px;width:min(88vw,360px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:86vh;overflow:auto;}
+  .card h2{margin:.1em 0 .3em;font-size:23px;}
+  .card p{margin:.2em 0 1em;color:var(--dim);font-size:14px;line-height:1.45;}
+  .btn{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;padding:13px;margin:8px 0;font-size:15px;font-weight:800;cursor:pointer;color:#0d1217;}
+  .btn.primary{background:var(--gold);}
+  .btn.ad{background:var(--blue);color:#06121f;}
+  .btn.green{background:var(--green);color:#06210f;}
+  .btn.ghost{background:transparent;color:var(--dim);font-weight:700;border:1px solid var(--line);}
+  .btn .sub{display:block;font-size:11px;font-weight:700;opacity:.7;margin-top:1px;}
+  .tag{display:inline-block;background:#2e3a48;color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:10px;}
+  /* workshop */
+  #homeBody{flex:1;overflow:auto;padding:16px;}
+  .hero{background:linear-gradient(160deg,#2a3a4d,#202833);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .hero h1{margin:0 0 2px;font-size:26px;letter-spacing:.5px;}
+  .hero .chap{color:var(--gold);font-weight:700;font-size:13px;}
+  .bar{height:10px;background:#1a2129;border-radius:999px;overflow:hidden;margin:10px 0 4px;border:1px solid var(--line);}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#ffd36b);}
+  .task{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;}
+  .task.done{opacity:.55;}
+  .task .t{flex:1;}
+  .task .t b{display:block;font-size:14px;}
+  .task .t small{color:var(--dim);}
+  .cost{background:#2a3440;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;}
+  .cost.can{background:var(--gold);color:#0d1217;border-color:var(--gold);}
+  .check{color:var(--green);font-weight:800;}
+  .row{display:flex;gap:8px;}
+  .shopitem{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;text-align:left;}
+  .shopitem .t{flex:1;}.shopitem .t b{font-size:14px;}.shopitem .t small{color:var(--dim);display:block;}
+  .buy{background:var(--green);color:#06210f;border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap;}
+  .metrics{font-size:12.5px;text-align:left;color:var(--dim);line-height:1.7;background:#1a2129;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px;}
+  .metrics b{color:var(--ink);}
+  .note{position:absolute;left:0;right:0;bottom:2px;text-align:center;color:#56636f;font-size:10px;z-index:3;}
+  /* fake ad */
+  #adOv .card{background:#0c0f13;border-color:#000;}
+  .adbox{height:160px;border-radius:12px;background:repeating-linear-gradient(45deg,#1c2a38,#1c2a38 12px,#223243 12px,#223243 24px);display:flex;align-items:center;justify-content:center;color:#7f93a8;font-weight:800;letter-spacing:1px;margin-bottom:10px;}
+  .toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);background:#0f1620;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:999px;font-weight:700;font-size:13px;z-index:20;opacity:0;transition:opacity .25s, top .25s;pointer-events:none;}
+  .toast.show{opacity:1;top:11%;}
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="c"></canvas></div>
+<div id="app">
+  <!-- HUD -->
+  <div id="hud">
+    <div class="pill">❤️ <span id="hLives">5</span><small id="hTimer"></small></div>
+    <div class="pill">🪙 <span id="hCoins">100</span></div>
+    <div class="grow"></div>
+    <button class="iconbtn" id="btnShop">🛒</button>
+    <button class="iconbtn" id="btnMetrics">📊</button>
+  </div>
 
-<!-- Stubbed FAIL OFFER — the monetization moment publishers test -->
-<div class="overlay" id="failOverlay">
-  <div class="card">
-    <span class="tag">Stuck</span>
-    <h2>Out of moves!</h2>
-    <p>No legal moves left. Add a spare rod to keep your run alive.</p>
-    <button class="btn primary" id="buyRod">+1 Spare Rod &nbsp;·&nbsp; $0.99</button>
-    <button class="btn ad" id="adRod">Watch ad for a Spare Rod</button>
-    <button class="btn ghost" id="restartLvl">Restart level</button>
+  <!-- PLAY STAGE -->
+  <div id="stage" style="display:none">
+    <canvas id="c"></canvas>
+    <div id="tray">
+      <div class="booster" id="bUndo"><div>↩️</div><div class="lbl">Undo</div><span class="cnt" id="cUndo">1</span></div>
+      <div class="booster" id="bDerust"><div>🧴</div><div class="lbl">De-Rust</div><span class="cnt" id="cDerust">1</span></div>
+      <div class="booster" id="bRod"><div>➕</div><div class="lbl">Spare Rod</div><span class="cnt" id="cRod">1</span></div>
+    </div>
+    <div class="note">prototype · ads &amp; IAP simulated · © Ocean Interactive</div>
+  </div>
+
+  <!-- HOME / WORKSHOP -->
+  <div class="screen show" id="home">
+    <div id="homeBody">
+      <div class="hero">
+        <div class="chap" id="chapName">Chapter 1</div>
+        <h1>BOLT UP</h1>
+        <div style="color:var(--dim);font-size:13px">Restore the workshop, one solved board at a time.</div>
+        <div class="bar"><i id="chapBar" style="width:0%"></i></div>
+        <div style="font-size:12px;color:var(--dim)" id="chapProg">0 / 3 restored</div>
+      </div>
+      <button class="btn primary" id="btnPlay" style="font-size:17px">▶︎ Play — Level <span id="hLevel">1</span></button>
+      <button class="btn green" id="btnDaily" style="display:none">🎁 Claim daily reward</button>
+      <div id="taskList"></div>
+    </div>
+    <div class="note">prototype · ads &amp; IAP simulated · © Ocean Interactive</div>
   </div>
 </div>
 
 <!-- WIN -->
-<div class="overlay" id="winOverlay">
-  <div class="card">
-    <span class="tag">Solved</span>
-    <h2 id="winTitle">Level clear!</h2>
-    <p id="winSub">Nice cascade.</p>
-    <button class="btn primary" id="nextLvl">Next level</button>
-  </div>
-</div>
+<div class="overlay" id="winOv"><div class="card">
+  <span class="tag">Solved</span>
+  <h2 id="winStars">★★★</h2>
+  <p id="winSub">Nice cascade.</p>
+  <div class="pill" style="justify-content:center;margin:0 auto 8px;width:max-content">🪙 +<span id="winCoins">0</span></div>
+  <button class="btn ad" id="winDouble">▶︎ Double coins <span class="sub">watch a short ad</span></button>
+  <button class="btn primary" id="winNext">Continue</button>
+</div></div>
 
-<!-- TITLE -->
-<div class="overlay" id="titleOverlay" style="display:flex">
-  <div class="card">
-    <span class="tag">Ocean Interactive · prototype</span>
-    <h2>BOLT UP</h2>
-    <p>Sort the bolts onto matching rods. Complete a rod to <b>lock</b> it — and <b>de-rust</b> its neighbours. One solve, three unlocks.</p>
-    <button class="btn primary" id="startBtn">Tap to play</button>
-  </div>
-</div>
+<!-- FAIL / CONTINUE -->
+<div class="overlay" id="failOv"><div class="card">
+  <span class="tag">Stuck</span>
+  <h2>Out of moves!</h2>
+  <p>No legal moves left. Add a spare rod and keep your run alive.</p>
+  <button class="btn ad" id="failAd">▶︎ Watch ad <span class="sub">free spare rod</span></button>
+  <button class="btn primary" id="failCoin">+1 Spare Rod <span class="sub">50 🪙</span></button>
+  <button class="btn ghost" id="failGive">Give up (−1 ❤️)</button>
+</div></div>
 
-<div class="note">Prototype build · ads &amp; IAP are stubbed · © Ocean Interactive</div>
+<!-- OUT OF LIVES -->
+<div class="overlay" id="lifeOv"><div class="card">
+  <span class="tag">No lives</span>
+  <h2>Out of lives ❤️</h2>
+  <p id="lifeSub">Refill to keep playing, or wait for one to regenerate.</p>
+  <button class="btn ad" id="lifeAd">▶︎ Watch ad <span class="sub">+1 life</span></button>
+  <button class="btn green" id="lifeBuy">Refill all <span class="sub">$0.99</span></button>
+  <button class="btn ghost" id="lifeClose">Wait</button>
+</div></div>
+
+<!-- DAILY -->
+<div class="overlay" id="dailyOv"><div class="card">
+  <span class="tag">Daily reward</span>
+  <h2 id="dailyTitle">Day 1 streak 🔥</h2>
+  <p id="dailySub">Come back every day for bigger rewards.</p>
+  <button class="btn primary" id="dailyClaim">Claim <span id="dailyAmt">50</span> 🪙</button>
+  <button class="btn ad" id="dailyDouble">▶︎ Double it <span class="sub">watch a short ad</span></button>
+</div></div>
+
+<!-- SHOP -->
+<div class="overlay" id="shopOv"><div class="card">
+  <span class="tag">Shop</span>
+  <h2>Workshop Store</h2>
+  <div id="shopList"></div>
+  <button class="btn ghost" id="shopClose">Close</button>
+</div></div>
+
+<!-- METRICS (publisher view) -->
+<div class="overlay" id="metricsOv"><div class="card">
+  <span class="tag">Publisher metrics · simulated</span>
+  <h2>Monetization & retention</h2>
+  <div class="metrics" id="metricsBody"></div>
+  <button class="btn ghost" id="metricsReset" style="margin-top:10px">Reset save (new player)</button>
+  <button class="btn ghost" id="metricsClose">Close</button>
+</div></div>
+
+<!-- FAKE AD -->
+<div class="overlay" id="adOv"><div class="card">
+  <div class="adbox">AD · <span id="adKind">REWARDED</span></div>
+  <p id="adCount">Reward in 3…</p>
+  <button class="btn primary" id="adSkip" style="display:none">Claim reward</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 (() => {
   "use strict";
-  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-  const COLORS = ['#ff5a5f','#ffb000','#2ecc71','#3aa0ff','#a06bff'];
-  const CAP = 4;                 // bolts per rod
-  const DPR = Math.min(2, window.devicePixelRatio || 1);
-
-  // ---- Level definitions. Each rod is bottom->top list of {c:colorIdx, r:rusted}. ----
-  // Levels are intentionally hand-built (no generator) per scope guardrails.
-  function L(spec){ return spec.map(r => r.map(b => ({c:b[0], r:!!b[1]}))); }
-  // Levels are hand-built and machine-verified solvable (see verify_levels.mjs).
-  // Bolt spec = [colorIdx, rusted?], rods listed bottom -> top.
-  const LEVELS = [
-    // L1 — teach the pure sort (no rust). 3 colours + 2 empty rods.
-    L([
-      [[0],[0],[0],[2]],
-      [[1],[1],[1],[0]],
-      [[2],[2],[2],[1]],
-      [], [],
-    ]),
-    // L2 — introduce rust; completing a rod de-rusts neighbours. 3 colours + 3 empty.
-    L([
-      [[2],[0],[1],[2]],
-      [[2],[1],[0],[2]],
-      [[1,1],[0,1],[0],[1]],
-      [], [], [],
-    ]),
-    // L3 — full cascade. 4 colours; A is free to complete first. 3 empty rods.
-    L([
-      [[2],[3],[0],[1]],
-      [[0],[3],[2],[1]],
-      [[3],[2],[0],[1]],
-      [[2,1],[3,1],[0],[1]],
-      [], [], [],
-    ]),
-  ];
-
-  // ---- runtime state ----
-  let level=0, rods=[], sel=-1, moves=0;
-  let anims=[], particles=[], shake=0, t=0;
-  let layout=null, locked=false;
-
-  function deepCopy(lv){ return lv.map(r => r.map(b => ({c:b.c, r:b.r}))); }
-  function loadLevel(i){
-    level=i; rods=deepCopy(LEVELS[i]); sel=-1; moves=0; anims=[]; particles=[]; shake=0; locked=false;
-    relayout();
-  }
-
-  // ---- layout ----
-  function relayout(){
-    const W = cv.width/DPR, H = cv.height/DPR;
-    const n = rods.length;
-    const margin = Math.min(W*0.07, 36);
-    const gap = (W - margin*2) / n;
-    const rw = Math.min(gap*0.62, 64);
-    const boltH = Math.min(rw*0.66, (H*0.5)/CAP);
-    const baseY = H*0.78;
-    layout = {W,H,margin,gap,rw,boltH,baseY,
-      rodTop: baseY - boltH*CAP - 14, n};
-  }
-
-  function rodX(i){ return layout.margin + layout.gap*(i+0.5); }
-
-  // ---- rules ----
-  function topMovableIndex(rod){
-    // returns index of top bolt if it's not rusted, else -1 (rusted top blocks)
-    if(rod.length===0) return -1;
-    const top = rod[rod.length-1];
-    return top.r ? -1 : rod.length-1;
-  }
-  function isComplete(rod){
-    if(rod.length!==CAP) return false;
-    const c=rod[0].c;
-    return rod.every(b=>b.c===c && !b.r);
-  }
-  function canMove(from,to){
+  // ============================ CORE RULES (mirrored in verify_levels.mjs) =====
+  const CAP = 4;
+  const COLORS = ['#ff5a5f','#ffb000','#2ecc71','#3aa0ff','#a06bff','#ff7ad9'];
+  const rnd = n => Math.floor(Math.random()*n);
+  const clone = rods => rods.map(r=>r.map(b=>({c:b.c,r:b.r})));
+  const top = r => r.length?r[r.length-1]:null;
+  const movableTop = r => (r.length && !top(r).r) ? top(r) : null;
+  const isComplete = r => r.length===CAP && r.every(b=>b.c===r[0].c && !b.r);
+  const won = rods => rods.every(r=>r.length===0 || isComplete(r));
+  function canMoveR(rods,from,to){
     if(from===to) return false;
-    const src=rods[from], dst=rods[to];
-    if(topMovableIndex(src)<0) return false;
-    if(dst.length>=CAP) return false;
-    if(isComplete(dst)) return false;
-    if(dst.length===0) return true;
-    const dt=dst[dst.length-1];
-    if(dt.r) return false;
-    return dt.c===src[src.length-1].c;
+    const s=rods[from], d=rods[to]; const mb=movableTop(s);
+    if(!mb) return false;
+    if(d.length>=CAP || isComplete(d)) return false;
+    if(d.length===0) return true;
+    const dt=top(d); if(dt.r) return false;
+    return dt.c===mb.c;
   }
-  function anyMoveExists(){
-    for(let a=0;a<rods.length;a++)
-      for(let b=0;b<rods.length;b++)
-        if(canMove(a,b)) return true;
+  function applyMoveR(rods,from,to){
+    const n=clone(rods); n[to].push(n[from].pop());
+    if(isComplete(n[to])) n.forEach((rod,ri)=>{ if(ri===to) return;
+      for(let k=rod.length-1;k>=0;k--){ if(rod[k].r){ rod[k].r=false; break; } } });
+    return n;
+  }
+  const ser = rods => rods.map(r=>r.map(b=>b.c+(b.r?'R':'')).join(',')).join('|');
+  function solvable(start,cap=120000){
+    const seen=new Set([ser(start)]); const st=[clone(start)]; let n=0;
+    while(st.length){ const rods=st.pop(); if(++n>cap) return false; if(won(rods)) return true;
+      for(let a=0;a<rods.length;a++)for(let b=0;b<rods.length;b++) if(canMoveR(rods,a,b)){
+        const nx=applyMoveR(rods,a,b),k=ser(nx); if(!seen.has(k)){seen.add(k);st.push(nx);} } }
     return false;
   }
-  function isWon(){
-    return rods.every(r => r.length===0 || isComplete(r));
-  }
-
-  // ---- de-rust cascade: completing a rod frees the top rusted bolt on every other rod ----
-  function deRustCascade(exceptRod){
-    let freed=0;
-    rods.forEach((rod,ri)=>{
-      if(ri===exceptRod) return;
-      for(let k=rod.length-1;k>=0;k--){
-        if(rod[k].r){ rod[k].r=false; freed++;
-          spawnSparks(rodX(ri), boltY(rod, k), COLORS[rod[k].c]); break; }
+  // ---- generator (identical to verify_levels.mjs) ----
+  function genLevel(idx){
+    const colors=Math.min(3+Math.floor((idx-1)/5),5), empties=2;
+    const rustN=idx<3?0:Math.min(Math.floor((idx-2)/3),colors);
+    const steps=16+idx*3;
+    const solved=()=>{ const r=[]; for(let c=0;c<colors;c++) r.push(Array.from({length:CAP},()=>({c,r:false}))); for(let e=0;e<empties;e++) r.push([]); return r; };
+    for(let attempt=0;attempt<300;attempt++){
+      let s=solved();
+      for(let i=0;i<steps;i++){
+        const srcs=s.map((r,j)=>r.length?j:-1).filter(j=>j>=0);
+        const from=srcs[rnd(srcs.length)];
+        const dsts=s.map((r,j)=>(j!==from && r.length<CAP)?j:-1).filter(j=>j>=0);
+        if(!dsts.length) continue;
+        s[dsts[rnd(dsts.length)]].push(s[from].pop());
       }
+      if(won(s)||!solvable(s)) continue;
+      if(rustN===0) return s;
+      for(let rt=0;rt<12;rt++){
+        const cand=clone(s); const spots=[];
+        cand.forEach((rod,ri)=>rod.forEach((_,bi)=>{ if(rod.length>1) spots.push([ri,bi]); }));
+        for(let k=spots.length-1;k>0;k--){const j=rnd(k+1);[spots[k],spots[j]]=[spots[j],spots[k]];}
+        let placed=0; for(const [ri,bi] of spots){ if(placed>=rustN) break; cand[ri][bi].r=true; placed++; }
+        if(solvable(cand)) return cand;
+      }
+      return s;
+    }
+    return solved();
+  }
+
+  // ============================ META / ECONOMY =================================
+  const SAVE_KEY='boltup_save_v1';
+  const LIFE_MAX=5, LIFE_REGEN_MS=10*60*1000;
+  const CHAPTERS=[
+    {name:'Dusty Workbench', tasks:[['Sweep the bench',150],['Oil the old vice',220],['Hang a worklamp',300]]},
+    {name:'The Tool Wall',    tasks:[['Mount the pegboard',360],['Sort the wrenches',460],['Frame the blueprints',560]]},
+    {name:'Power Corner',     tasks:[['Fix the drill press',680],['Wire the outlets',820],['Install a dust fan',980]]},
+  ];
+  const TASKS=[]; CHAPTERS.forEach((ch,ci)=>ch.tasks.forEach((t,ti)=>TASKS.push({chapter:ci,name:t[0],cost:t[1]})));
+  const SKUS=[
+    {id:'coins_s', name:'Pouch of coins', desc:'500 🪙', price:1.99, grant:s=>s.coins+=500},
+    {id:'coins_l', name:'Crate of coins', desc:'3,000 🪙', price:9.99, grant:s=>s.coins+=3000},
+    {id:'boosters',name:'Booster bundle', desc:'+3 of each booster', price:2.99, grant:s=>{s.boosters.undo+=3;s.boosters.derust+=3;s.boosters.rod+=3;}},
+    {id:'lives',   name:'Refill lives',   desc:'Fill to 5 ❤️', price:0.99, grant:s=>{s.lives=LIFE_MAX;s.lifeStamp=Date.now();}},
+    {id:'noads',   name:'Remove ads',     desc:'No interstitials +1,000 🪙', price:3.99, grant:s=>{s.removeAds=true;s.coins+=1000;}},
+    {id:'starter', name:'Starter pack',   desc:'1,500 🪙 +2 of each booster', price:4.99, once:true, grant:s=>{s.coins+=1500;s.boosters.undo+=2;s.boosters.derust+=2;s.boosters.rod+=2;}},
+  ];
+  // ad eCPM assumptions (simulated, for the publisher metrics view)
+  const ECPM={rewarded:0.020, interstitial:0.009};
+
+  function defaultState(){ return {
+    coins:100, lives:LIFE_MAX, lifeStamp:Date.now(), level:1,
+    bestStars:{}, workshop:0,
+    boosters:{undo:1, derust:1, rod:1}, removeAds:false, ownedOnce:{},
+    daily:{last:null, streak:0},
+    sim:{adsRewarded:0, adsInter:0, iaps:0, revenue:0, firstSeen:Date.now(), lastSeen:Date.now(), sessions:0, levelsWon:0}
+  };}
+  let S = load();
+  function load(){ try{ const r=JSON.parse(localStorage.getItem(SAVE_KEY)); return r?Object.assign(defaultState(),r):defaultState(); }catch(e){ return defaultState(); } }
+  function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+
+  // ---- lives regen ----
+  function regenLives(){
+    if(S.lives>=LIFE_MAX){ S.lifeStamp=Date.now(); return; }
+    const elapsed=Date.now()-S.lifeStamp;
+    const gained=Math.floor(elapsed/LIFE_REGEN_MS);
+    if(gained>0){ S.lives=Math.min(LIFE_MAX,S.lives+gained); S.lifeStamp+=gained*LIFE_REGEN_MS; if(S.lives>=LIFE_MAX) S.lifeStamp=Date.now(); }
+  }
+  function lifeTimerText(){
+    if(S.lives>=LIFE_MAX) return '';
+    const ms=LIFE_REGEN_MS-((Date.now()-S.lifeStamp)%LIFE_REGEN_MS);
+    const m=Math.floor(ms/60000), sec=Math.floor((ms%60000)/1000);
+    return ' '+m+':'+String(sec).padStart(2,'0');
+  }
+
+  // ============================ DOM / HELPERS ==================================
+  const $=id=>document.getElementById(id);
+  const showOv=id=>$(id).classList.add('show');
+  const hideOv=id=>$(id).classList.remove('show');
+  let toastT=null;
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1300); }
+
+  function refreshHUD(){
+    regenLives();
+    $('hLives').textContent=S.lives;
+    $('hTimer').textContent=lifeTimerText();
+    $('hCoins').textContent=S.coins;
+    $('hLevel').textContent=S.level;
+  }
+
+  // ============================ MONETIZATION (simulated) =======================
+  let adTimer=null;
+  function playAd(kind, onDone){
+    $('adKind').textContent=kind.toUpperCase();
+    $('adSkip').style.display='none';
+    showOv('adOv');
+    let n=3; $('adCount').textContent='Reward in '+n+'…';
+    clearInterval(adTimer);
+    adTimer=setInterval(()=>{ n--; if(n>0){ $('adCount').textContent='Reward in '+n+'…'; }
+      else { clearInterval(adTimer); $('adCount').textContent='Done!'; $('adSkip').style.display='block'; } },550);
+    $('adSkip').onclick=()=>{ hideOv('adOv'); onDone&&onDone(); };
+  }
+  function rewardedAd(placement, onReward){
+    playAd('rewarded', ()=>{ S.sim.adsRewarded++; S.sim.revenue+=ECPM.rewarded; save(); onReward&&onReward(); });
+  }
+  function interstitial(onDone){
+    if(S.removeAds){ onDone&&onDone(); return; }
+    playAd('interstitial', ()=>{ S.sim.adsInter++; S.sim.revenue+=ECPM.interstitial; save(); onDone&&onDone(); });
+  }
+  function buy(sku){
+    if(sku.once && S.ownedOnce[sku.id]){ toast('Already owned'); return; }
+    // simulated successful purchase
+    sku.grant(S); if(sku.once) S.ownedOnce[sku.id]=true;
+    S.sim.iaps++; S.sim.revenue+=sku.price; save();
+    toast('Purchased: '+sku.name); refreshHUD(); renderShop(); renderHome();
+  }
+
+  // ============================ HOME / WORKSHOP ================================
+  function chapterOf(taskIdx){ return taskIdx<TASKS.length?TASKS[taskIdx].chapter:CHAPTERS.length-1; }
+  function renderHome(){
+    refreshHUD();
+    const done=S.workshop;
+    const ci=Math.min(chapterOf(done),CHAPTERS.length-1);
+    const ch=CHAPTERS[ci];
+    const chDoneCount=ch.tasks.filter((_,ti)=>{ const gi=CHAPTERS.slice(0,ci).reduce((a,c)=>a+c.tasks.length,0)+ti; return gi<done; }).length;
+    $('chapName').textContent='Chapter '+(ci+1)+' · '+ch.name;
+    $('chapBar').style.width=(chDoneCount/ch.tasks.length*100)+'%';
+    $('chapProg').textContent=chDoneCount+' / '+ch.tasks.length+' restored';
+    // task list = remaining tasks of current chapter
+    const list=$('taskList'); list.innerHTML='';
+    const base=CHAPTERS.slice(0,ci).reduce((a,c)=>a+c.tasks.length,0);
+    ch.tasks.forEach((t,ti)=>{
+      const gi=base+ti; const isDone=gi<done; const isNext=gi===done;
+      const el=document.createElement('div'); el.className='task'+(isDone?' done':'');
+      el.innerHTML='<div class="t"><b>'+t[0]+'</b><small>'+(isDone?'Restored':isNext?'Next task':'Locked')+'</small></div>';
+      const right=document.createElement(isDone?'span':'button');
+      if(isDone){ right.className='check'; right.textContent='✓'; }
+      else {
+        const can=isNext && S.coins>=t[1];
+        right.className='cost'+(can?' can':''); right.textContent=t[1]+' 🪙';
+        if(isNext){ right.onclick=()=>restore(gi,t[1]); } else { right.style.opacity=.4; }
+      }
+      el.appendChild(right); list.appendChild(el);
     });
-    return freed;
+    // daily
+    $('btnDaily').style.display = dailyAvailable()?'block':'none';
+  }
+  function restore(gi,cost){
+    if(S.coins<cost){ toast('Not enough coins'); return; }
+    S.coins-=cost; S.workshop=Math.max(S.workshop,gi+1); save();
+    toast('Restored! 🔧'); refreshHUD(); renderHome();
+    if(S.workshop>=TASKS.length){ setTimeout(()=>toast('Workshop fully restored! 🎉'),400); }
   }
 
-  function boltY(rod, idx){ return layout.baseY - idx*layout.boltH - layout.boltH/2; }
-
-  // ---- input ----
-  function rodAt(px){
-    for(let i=0;i<rods.length;i++){
-      const x=rodX(i);
-      if(px>=x-layout.gap/2 && px<x+layout.gap/2) return i;
-    }
-    return -1;
+  // ============================ DAILY REWARD ===================================
+  function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+  function dailyAvailable(){ return S.daily.last!==todayStr(); }
+  function openDaily(){
+    if(!dailyAvailable()){ toast('Come back tomorrow!'); return; }
+    // streak continues if last was yesterday-ish, else resets
+    const amt=Math.min(50+S.daily.streak*25,300);
+    $('dailyTitle').textContent='Day '+(S.daily.streak+1)+' streak 🔥';
+    $('dailyAmt').textContent=amt;
+    $('dailyClaim').onclick=()=>{ grantDaily(amt,false); };
+    $('dailyDouble').onclick=()=>rewardedAd('daily',()=>grantDaily(amt,true));
+    showOv('dailyOv');
   }
+  function grantDaily(amt,doubled){
+    const total=doubled?amt*2:amt;
+    S.coins+=total; S.daily.last=todayStr(); S.daily.streak++; save();
+    hideOv('dailyOv'); toast('+'+total+' 🪙'); refreshHUD(); renderHome();
+  }
+
+  // ============================ SHOP ===========================================
+  function renderShop(){
+    const list=$('shopList'); list.innerHTML='';
+    SKUS.forEach(sku=>{
+      const el=document.createElement('div'); el.className='shopitem';
+      const owned=sku.once&&S.ownedOnce[sku.id];
+      el.innerHTML='<div class="t"><b>'+sku.name+'</b><small>'+sku.desc+'</small></div>';
+      const b=document.createElement('button'); b.className='buy';
+      b.textContent=owned?'Owned':'$'+sku.price.toFixed(2);
+      if(owned) b.disabled=true; else b.onclick=()=>buy(sku);
+      el.appendChild(b); list.appendChild(el);
+    });
+  }
+
+  // ============================ METRICS (publisher view) =======================
+  function renderMetrics(){
+    regenLives();
+    const days=Math.max(1,Math.ceil((Date.now()-S.sim.firstSeen)/86400000));
+    const arpdau=(S.sim.revenue/days);
+    $('metricsBody').innerHTML=
+      '<div>Player day: <b>D'+(days-1)+'</b> · sessions <b>'+S.sim.sessions+'</b></div>'+
+      '<div>Levels won: <b>'+S.sim.levelsWon+'</b> · current level <b>'+S.level+'</b></div>'+
+      '<div>Workshop restored: <b>'+S.workshop+' / '+TASKS.length+'</b></div>'+
+      '<hr style="border-color:var(--line)">'+
+      '<div>Rewarded ads: <b>'+S.sim.adsRewarded+'</b> · interstitials <b>'+S.sim.adsInter+'</b></div>'+
+      '<div>IAP purchases: <b>'+S.sim.iaps+'</b> · remove-ads: <b>'+(S.removeAds?'yes':'no')+'</b></div>'+
+      '<div>Simulated revenue: <b>$'+S.sim.revenue.toFixed(3)+'</b></div>'+
+      '<div>≈ ARPDAU: <b>$'+arpdau.toFixed(3)+'</b> <small>(ad eCPM rew $'+ECPM.rewarded+' / int $'+ECPM.interstitial+')</small></div>'+
+      '<hr style="border-color:var(--line)"><div style="color:#6f7d8b">This panel exists so a publisher can read the monetization surface at a glance. Numbers are simulated client-side.</div>';
+  }
+
+  // ============================ PUZZLE (canvas) ================================
+  const cv=$('c'), ctx=cv.getContext('2d');
+  const DPR=Math.min(2,window.devicePixelRatio||1);
+  let G=null, layout=null, anims=[], particles=[], shake=0, locked=false;
+
+  function startLevel(){
+    regenLives();
+    if(S.lives<=0){ openLife(); return; }
+    const rods=genLevel(S.level);
+    const boltCount=rods.reduce((a,r)=>a+r.length,0);
+    G={ rods, sel:-1, moves:0, par:Math.round(boltCount*1.6), history:[], usedRod:0 };
+    anims=[]; particles=[]; shake=0; locked=false;
+    $('home').classList.remove('show'); $('stage').style.display='block';
+    refreshBoosters(); resize();
+  }
+  function exitToHome(loseLife){
+    if(loseLife){ S.lives=Math.max(0,S.lives-1); if(S.lives===LIFE_MAX-1) S.lifeStamp=Date.now(); save(); }
+    $('stage').style.display='none'; $('home').classList.add('show'); renderHome();
+  }
+
+  function refreshBoosters(){
+    [['undo','cUndo'],['derust','cDerust'],['rod','cRod']].forEach(([k,id])=>{
+      const n=S.boosters[k]; const e=$(id); e.textContent=n>0?n:'AD'; e.className='cnt'+(n>0?'':' zero'); });
+  }
+  function snapshot(){ G.history.push({rods:clone(G.rods)}); if(G.history.length>40) G.history.shift(); }
+
+  // layout
+  function relayout(){
+    const W=cv.width/DPR, H=cv.height/DPR, n=G.rods.length;
+    const margin=Math.min(W*0.05,28);
+    const gap=(W-margin*2)/n;
+    const rw=Math.min(gap*0.6,58);
+    const boltH=Math.min(rw*0.64,(H*0.46)/CAP);
+    const baseY=H*0.72;
+    layout={W,H,margin,gap,rw,boltH,baseY,rodTop:baseY-boltH*CAP-12};
+  }
+  const rodX=i=>layout.margin+layout.gap*(i+0.5);
+  const boltY=(len,idx)=>layout.baseY-idx*layout.boltH-layout.boltH/2;
+
+  function topMovableIndex(rod){ if(!rod.length) return -1; return top(rod).r?-1:rod.length-1; }
+  function anyMove(){ for(let a=0;a<G.rods.length;a++)for(let b=0;b<G.rods.length;b++) if(canMoveR(G.rods,a,b)) return true; return false; }
+
   function tap(px,py){
-    if(locked) return;
-    const i=rodAt(px); if(i<0) return;
-    if(sel<0){
-      if(topMovableIndex(rods[i])>=0){ sel=i; }
-      return;
-    }
-    if(i===sel){ sel=-1; return; }
-    if(canMove(sel,i)){ doMove(sel,i); sel=-1; }
-    else { // reselect if tapped a rod with a movable bolt
-      sel = topMovableIndex(rods[i])>=0 ? i : -1;
-    }
+    if(locked||!G) return;
+    let i=-1; for(let k=0;k<G.rods.length;k++){ const x=rodX(k); if(px>=x-layout.gap/2&&px<x+layout.gap/2){i=k;break;} }
+    if(i<0) return;
+    if(G.sel<0){ if(topMovableIndex(G.rods[i])>=0) G.sel=i; return; }
+    if(i===G.sel){ G.sel=-1; return; }
+    if(canMoveR(G.rods,G.sel,i)){ doMove(G.sel,i); G.sel=-1; }
+    else G.sel = topMovableIndex(G.rods[i])>=0 ? i : -1;
   }
-
   function doMove(from,to){
-    const src=rods[from];
-    const bolt=src.pop();
-    const fromIdx=src.length;           // it was on top
-    rods[to].push(bolt);
-    const toIdx=rods[to].length-1;
-    moves++;
-    // animate the hop
-    anims.push({bolt, fromX:rodX(from), fromY:boltY(src.concat([bolt]),fromIdx),
-                toX:rodX(to), toY:boltY(rods[to],toIdx), t:0, dur:0.16, to, toIdx});
-    locked=true; // brief lock during the hop
+    snapshot();
+    const src=G.rods[from], bolt=src.pop(), fromIdx=src.length;
+    G.rods[to].push(bolt); const toIdx=G.rods[to].length-1; G.moves++;
+    anims.push({bolt, fromX:rodX(from), fromY:boltY(fromIdx+1,fromIdx), toX:rodX(to), toY:boltY(G.rods[to].length,toIdx), t:0, dur:0.15, to});
+    locked=true;
   }
-
-  function settleAfterMove(a){
+  function settle(a){
     locked=false;
-    // did the destination rod just complete?
-    if(isComplete(rods[a.to])){
-      onRodComplete(a.to);
-    }
-    if(isWon()){ setTimeout(showWin, 380); return; }
-    if(!anyMoveExists()){ setTimeout(()=>showFail(), 260); }
+    if(isComplete(G.rods[a.to])) onComplete(a.to);
+    if(won(G.rods)){ setTimeout(onWin,360); return; }
+    if(!anyMove()) setTimeout(()=>showOv('failOv'),240);
   }
-
-  function onRodComplete(ri){
-    shake=Math.max(shake,10);
-    burstLock(ri);
-    const freed=deRustCascade(ri);
-    if(freed>0) shake=Math.max(shake,7);
+  function onComplete(ri){
+    shake=Math.max(shake,10); burstLock(ri);
+    G.rods.forEach((rod,j)=>{ if(j===ri) return;
+      for(let k=rod.length-1;k>=0;k--){ if(rod[k].r){ rod[k].r=false; sparks(rodX(j),boltY(rod.length,k),COLORS[rod[k].c]); shake=Math.max(shake,7); break; } } });
   }
-
-  // ---- particles ----
-  function spawnSparks(x,y,color){
-    for(let i=0;i<10;i++){
-      const a=Math.random()*Math.PI*2, s=40+Math.random()*120;
-      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:0,max:.5+Math.random()*.3,color,sz:2+Math.random()*2});
-    }
-  }
-  function burstLock(ri){
-    const x=rodX(ri), y=layout.rodTop;
-    const col=COLORS[rods[ri][0].c];
-    for(let i=0;i<22;i++){
-      const a=Math.random()*Math.PI*2, s=60+Math.random()*200;
-      particles.push({x,y:y+10,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:0,max:.6+Math.random()*.4,color:i%3?col:'#ffe08a',sz:2+Math.random()*3});
+  // boosters
+  $('bUndo').onclick=()=>useBooster('undo',()=>{ if(!G.history.length){toast('Nothing to undo');return false;} const h=G.history.pop(); G.rods=h.rods; G.sel=-1; return true; });
+  $('bDerust').onclick=()=>useBooster('derust',()=>{ let any=false; G.rods.forEach((rod,j)=>{ for(let k=rod.length-1;k>=0;k--){ if(rod[k].r){rod[k].r=false;any=true;sparks(rodX(j),boltY(rod.length,k),COLORS[rod[k].c]);break;} } }); if(!any){toast('No rust to remove');return false;} shake=8; return true; });
+  $('bRod').onclick=()=>useBooster('rod',()=>{ G.rods.push([]); relayout(); return true; });
+  function useBooster(key, effect){
+    if(locked) return;
+    if(S.boosters[key]>0){
+      const ok=effect();
+      if(ok!==false){ S.boosters[key]--; save(); refreshBoosters(); }
+    } else {
+      rewardedAd('booster_'+key, ()=>{ const ok=effect(); if(ok!==false) refreshBoosters(); });
     }
   }
 
-  // ---- render ----
+  // fail-offer wiring
+  function grantRod(){ hideOv('failOv'); G.rods.push([]); relayout(); locked=false; }
+  $('failAd').onclick=()=>rewardedAd('continue',grantRod);
+  $('failCoin').onclick=()=>{ if(S.coins<50){ toast('Not enough coins'); return; } S.coins-=50; save(); refreshHUD(); grantRod(); };
+  $('failGive').onclick=()=>{ hideOv('failOv'); exitToHome(true); };
+
+  // win
+  function onWin(){
+    const stars = G.moves<=G.par?3 : G.moves<=Math.round(G.par*1.4)?2:1;
+    const baseCoins = 30 + stars*15 + Math.max(0,(S.level%5===0?40:0));
+    G.winCoins=baseCoins; G.winStars=stars;
+    if((S.bestStars[S.level]||0)<stars) S.bestStars[S.level]=stars;
+    S.sim.levelsWon++; save();
+    $('winStars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
+    $('winSub').textContent = ['Solved!','Nice cascade.','The rust just kept popping loose.'][rnd(3)];
+    $('winCoins').textContent=baseCoins;
+    $('winDouble').onclick=()=>rewardedAd('double_coins',()=>{ S.coins+=baseCoins; G.winCoins+=baseCoins; save(); $('winCoins').textContent=G.winCoins; $('winDouble').disabled=true; refreshHUD(); });
+    $('winDouble').disabled=false;
+    S.coins+=baseCoins; refreshHUD();
+    showOv('winOv');
+  }
+  $('winNext').onclick=()=>{
+    hideOv('winOv');
+    S.level++; save();
+    const showInter=(S.level%2===0);
+    const proceed=()=>{ $('stage').style.display='none'; $('home').classList.add('show'); renderHome(); };
+    if(showInter) interstitial(proceed); else proceed();
+  };
+
+  // out of lives
+  function openLife(){ $('lifeSub').textContent = S.lives>0?'':'Refill to keep playing, or wait '+lifeTimerText().trim()+' for one to regenerate.'; showOv('lifeOv'); }
+  $('lifeAd').onclick=()=>rewardedAd('life',()=>{ S.lives=Math.min(LIFE_MAX,S.lives+1); S.lifeStamp=Date.now(); save(); refreshHUD(); hideOv('lifeOv'); toast('+1 ❤️'); });
+  $('lifeBuy').onclick=()=>{ buy(SKUS.find(s=>s.id==='lives')); hideOv('lifeOv'); };
+  $('lifeClose').onclick=()=>hideOv('lifeOv');
+
+  // ============================ RENDER =========================================
   function frame(dt){
-    t+=dt;
     ctx.setTransform(DPR,0,0,DPR,0,0);
     const {W,H}=layout;
-    // bg
     ctx.fillStyle='#1f2630'; ctx.fillRect(0,0,W,H);
-    drawPegboard(W,H);
-
-    let ox=0, oy=0;
-    if(shake>0){ ox=(Math.random()*2-1)*shake; oy=(Math.random()*2-1)*shake; shake*=Math.pow(0.001,dt); if(shake<0.4)shake=0; }
+    // pegboard dots
+    ctx.fillStyle='#26313c'; for(let y=24;y<H-60;y+=30)for(let x=24;x<W;x+=30){ ctx.beginPath(); ctx.arc(x,y,2,0,7); ctx.fill(); }
+    let ox=0,oy=0; if(shake>0){ ox=(Math.random()*2-1)*shake; oy=(Math.random()*2-1)*shake; shake*=Math.pow(0.0015,dt); if(shake<0.4)shake=0; }
     ctx.save(); ctx.translate(ox,oy);
-
-    // HUD
-    ctx.fillStyle='#7d8a99'; ctx.font='600 14px sans-serif'; ctx.textAlign='left';
-    ctx.fillText('Level '+(level+1)+' / '+LEVELS.length, layout.margin, 30);
-    ctx.textAlign='right';
-    ctx.fillText('Moves '+moves, W-layout.margin, 30);
+    // HUD line
+    ctx.fillStyle='#7d8a99'; ctx.font='600 13px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Level '+S.level, layout.margin, 24);
+    ctx.textAlign='right'; ctx.fillText('Moves '+G.moves+' · par '+G.par, W-layout.margin, 24);
     ctx.textAlign='center';
-
-    // rods
-    for(let i=0;i<rods.length;i++) drawRod(i);
-
-    // flying bolts (animations)
-    for(const a of anims){
-      const e=easeOut(a.t/a.dur);
-      const x=a.fromX+(a.toX-a.fromX)*e;
-      const arc=Math.sin(e*Math.PI)*layout.boltH*1.4;
-      const y=a.fromY+(a.toY-a.fromY)*e-arc;
-      drawBolt(x,y,a.bolt,false,1.0);
-    }
-
-    // particles
-    for(const p of particles){
-      const k=1-p.life/p.max;
-      ctx.globalAlpha=Math.max(0,k);
-      ctx.fillStyle=p.color;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,7); ctx.fill();
-    }
-    ctx.globalAlpha=1;
-    ctx.restore();
+    for(let i=0;i<G.rods.length;i++) drawRod(i);
+    for(const a of anims){ const e=easeOut(a.t/a.dur); const x=a.fromX+(a.toX-a.fromX)*e; const arc=Math.sin(e*Math.PI)*layout.boltH*1.5; const y=a.fromY+(a.toY-a.fromY)*e-arc; drawBolt(x,y,a.bolt,1); }
+    for(const p of particles){ const k=1-p.life/p.max; ctx.globalAlpha=Math.max(0,k); ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,7); ctx.fill(); }
+    ctx.globalAlpha=1; ctx.restore();
   }
-
-  function drawPegboard(W,H){
-    ctx.fillStyle='#222b35';
-    const r=7, sp=34;
-    for(let y=sp;y<H;y+=sp) for(let x=sp;x<W;x+=sp){
-      ctx.beginPath(); ctx.arc(x,y,2,0,7); ctx.fill();
-    }
-  }
-
   function drawRod(i){
-    const x=rodX(i), rod=rods[i];
-    const {rw,boltH,baseY,rodTop}=layout;
-    const complete=isComplete(rod);
-    // rod post
-    ctx.fillStyle = sel===i ? '#566273' : '#3a4453';
-    roundRect(x-3, rodTop, 6, baseY-rodTop, 3); ctx.fill();
-    // base plate
-    ctx.fillStyle='#2c3540'; roundRect(x-rw/2-4, baseY-6, rw+8, 12, 5); ctx.fill();
-    // selection lift indicator
-    // bolts (skip the one currently flying from this rod handled separately—anims hold popped bolt)
-    for(let k=0;k<rod.length;k++){
-      const lift = (sel===i && k===rod.length-1 && topMovableIndex(rod)>=0) ? -10 : 0;
-      drawBolt(x, baseY - k*boltH - boltH/2 + lift, rod[k], k===rod.length-1, 1.0);
-    }
-    // gold lock ring if complete
-    if(complete){
-      ctx.strokeStyle='#ffe08a'; ctx.lineWidth=3;
-      roundRect(x-rw/2-7, baseY-CAP*boltH-9, rw+14, CAP*boltH+16, 12); ctx.stroke();
-    }
+    const x=rodX(i), rod=G.rods[i], {rw,boltH,baseY,rodTop}=layout, complete=isComplete(rod);
+    ctx.fillStyle=G.sel===i?'#5a6736':'#3a4453'; rr(x-3,rodTop,6,baseY-rodTop,3); ctx.fill();
+    ctx.fillStyle='#2c3540'; rr(x-rw/2-4,baseY-6,rw+8,12,5); ctx.fill();
+    for(let k=0;k<rod.length;k++){ const lift=(G.sel===i&&k===rod.length-1&&topMovableIndex(rod)>=0)?-10:0; drawBolt(x,baseY-k*boltH-boltH/2+lift,rod[k],1); }
+    if(complete){ ctx.strokeStyle='#ffe08a'; ctx.lineWidth=3; rr(x-rw/2-7,baseY-CAP*boltH-9,rw+14,CAP*boltH+16,12); ctx.stroke(); }
   }
-
-  function drawBolt(x,y,bolt,isTop,sc){
-    const rw=layout.rw, h=layout.boltH;
-    const w=rw*sc, hh=h*0.86*sc;
-    const col=COLORS[bolt.c];
-    // hex head
+  function drawBolt(x,y,bolt,sc){
+    const rw=layout.rw, h=layout.boltH, w=rw*sc, hh=h*0.86*sc, col=COLORS[bolt.c];
     ctx.save(); ctx.translate(x,y);
-    ctx.beginPath();
-    for(let s=0;s<6;s++){ const a=Math.PI/6 + s*Math.PI/3; const px=Math.cos(a)*w/2, py=Math.sin(a)*hh/2*1.15;
-      s?ctx.lineTo(px,py):ctx.moveTo(px,py); }
-    ctx.closePath();
-    ctx.fillStyle=col; ctx.fill();
-    // inner highlight
-    ctx.beginPath(); ctx.arc(0,-hh*0.06,w*0.2,0,7);
-    ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fill();
-    // center screw slot
-    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(-w*0.16,0); ctx.lineTo(w*0.16,0); ctx.stroke();
-    // rust overlay
-    if(bolt.r){
-      ctx.globalAlpha=.78; ctx.fillStyle='#6e4a28';
-      ctx.beginPath();
-      for(let s=0;s<6;s++){ const a=Math.PI/6 + s*Math.PI/3; const px=Math.cos(a)*w/2, py=Math.sin(a)*hh/2*1.15;
-        s?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); ctx.fill();
-      // hatch
-      ctx.globalAlpha=.5; ctx.strokeStyle='#3a2715'; ctx.lineWidth=1.5;
-      for(let hx=-w/2;hx<w/2;hx+=5){ ctx.beginPath(); ctx.moveTo(hx,-hh/2); ctx.lineTo(hx+hh,hh/2); ctx.stroke(); }
-      ctx.globalAlpha=1;
-      // small lock glyph
-      ctx.fillStyle='#d9c4a0'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
-      ctx.fillText('🔒', 0, 0);
-    }
+    const hex=()=>{ ctx.beginPath(); for(let s=0;s<6;s++){ const a=Math.PI/6+s*Math.PI/3, px=Math.cos(a)*w/2, py=Math.sin(a)*hh/2*1.15; s?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); };
+    hex(); ctx.fillStyle=col; ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-hh*0.06,w*0.2,0,7); ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-w*0.16,0); ctx.lineTo(w*0.16,0); ctx.stroke();
+    if(bolt.r){ ctx.globalAlpha=.8; ctx.fillStyle='#6e4a28'; hex(); ctx.fill();
+      ctx.globalAlpha=.5; ctx.strokeStyle='#3a2715'; ctx.lineWidth=1.4; for(let hx=-w/2;hx<w/2;hx+=5){ ctx.beginPath(); ctx.moveTo(hx,-hh/2); ctx.lineTo(hx+hh,hh/2); ctx.stroke(); }
+      ctx.globalAlpha=1; ctx.fillStyle='#d9c4a0'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('🔒',0,0); }
     ctx.restore();
   }
+  function sparks(x,y,color){ for(let i=0;i<10;i++){ const a=Math.random()*7, s=40+Math.random()*120; particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:0,max:.5+Math.random()*.3,color,sz:2+Math.random()*2}); } }
+  function burstLock(ri){ const x=rodX(ri), y=layout.rodTop, col=COLORS[G.rods[ri][0].c]; for(let i=0;i<22;i++){ const a=Math.random()*7, s=60+Math.random()*200; particles.push({x,y:y+10,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:0,max:.6+Math.random()*.4,color:i%3?col:'#ffe08a',sz:2+Math.random()*3}); } }
+  const easeOut=x=>1-Math.pow(1-Math.min(1,x),3);
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
-  // ---- helpers ----
-  function easeOut(x){ return 1-Math.pow(1-Math.min(1,x),3); }
-  function roundRect(x,y,w,h,r){ ctx.beginPath();
-    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-
-  // ---- main loop ----
-  let last=performance.now();
+  // ============================ LOOP ==========================================
+  let last=performance.now(), hudTick=0;
   function loop(now){
     const dt=Math.min(0.05,(now-last)/1000); last=now;
-    // advance anims
-    for(let i=anims.length-1;i>=0;i--){ const a=anims[i]; a.t+=dt;
-      if(a.t>=a.dur){ anims.splice(i,1); settleAfterMove(a); } }
-    // particles
-    for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.life+=dt;
-      p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=420*dt; if(p.life>=p.max) particles.splice(i,1); }
-    if(layout) frame(dt);
+    for(let i=anims.length-1;i>=0;i--){ const a=anims[i]; a.t+=dt; if(a.t>=a.dur){ anims.splice(i,1); settle(a); } }
+    for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.life+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=420*dt; if(p.life>=p.max) particles.splice(i,1); }
+    if(G && $('stage').style.display!=='none' && layout) frame(dt);
+    hudTick+=dt; if(hudTick>1){ hudTick=0; if($('home').classList.contains('show')) refreshHUD(); }
     requestAnimationFrame(loop);
   }
 
-  // ---- overlays / flow ----
-  const $=id=>document.getElementById(id);
-  function showWin(){
-    const last = level===LEVELS.length-1;
-    $('winTitle').textContent = last ? 'Prototype complete!' : 'Level clear!';
-    $('winSub').textContent = last
-      ? 'You sorted every board. This is the magic-moment slice buyers test.'
-      : 'Nice cascade. The rust just kept unlocking.';
-    $('nextLvl').textContent = last ? 'Play again' : 'Next level';
-    $('winOverlay').style.display='flex';
-  }
-  function showFail(){ $('failOverlay').style.display='flex'; }
-  function hide(id){ $(id).style.display='none'; }
-
-  $('startBtn').onclick=()=>{ hide('titleOverlay'); loadLevel(0); };
-  $('nextLvl').onclick=()=>{ hide('winOverlay'); loadLevel((level+1)%LEVELS.length); };
-  $('restartLvl').onclick=()=>{ hide('failOverlay'); loadLevel(level); };
-  // Stubbed monetization: both "buy" and "ad" grant a spare rod (the fail-offer mechanic).
-  function grantSpareRod(){ hide('failOverlay'); rods.push([]); relayout(); locked=false; }
-  $('buyRod').onclick=grantSpareRod;
-  $('adRod').onclick=grantSpareRod;
-
-  // ---- canvas sizing & input ----
+  // ============================ INPUT / SIZING ================================
   function resize(){
-    const wrap=document.getElementById('wrap');
-    // portrait play area, capped for desktop
-    const aw=Math.min(window.innerWidth, 520);
-    const ah=window.innerHeight;
-    cv.style.width=aw+'px'; cv.style.height=ah+'px';
-    cv.width=aw*DPR; cv.height=ah*DPR;
-    if(rods.length) relayout();
+    const stage=$('stage'); const w=stage.clientWidth||Math.min(window.innerWidth,520); const h=stage.clientHeight||window.innerHeight;
+    cv.width=w*DPR; cv.height=h*DPR; if(G) relayout();
   }
   window.addEventListener('resize',resize);
+  cv.addEventListener('pointerdown',e=>{ const r=cv.getBoundingClientRect(); tap(e.clientX-r.left, e.clientY-r.top); });
 
-  function pt(e){
-    const r=cv.getBoundingClientRect();
-    const src=e.touches?e.touches[0]:e;
-    return {x:(src.clientX-r.left), y:(src.clientY-r.top)};
-  }
-  cv.addEventListener('pointerdown',e=>{ const p=pt(e); tap(p.x,p.y); });
+  // ============================ NAV WIRING ====================================
+  $('btnPlay').onclick=()=>startLevel();
+  $('btnDaily').onclick=openDaily;
+  $('btnShop').onclick=()=>{ renderShop(); showOv('shopOv'); };
+  $('shopClose').onclick=()=>hideOv('shopOv');
+  $('btnMetrics').onclick=()=>{ renderMetrics(); showOv('metricsOv'); };
+  $('metricsClose').onclick=()=>hideOv('metricsOv');
+  $('metricsReset').onclick=()=>{ if(confirm('Reset save and start as a brand-new player?')){ localStorage.removeItem(SAVE_KEY); S=defaultState(); save(); hideOv('metricsOv'); renderHome(); toast('New player'); } };
 
-  resize();
+  // ============================ BOOT ==========================================
+  S.sim.sessions++; S.sim.lastSeen=Date.now(); save();
+  regenLives(); renderHome();
+  if(dailyAvailable()) setTimeout(openDaily,500);
   requestAnimationFrame(loop);
 })();
 </script>

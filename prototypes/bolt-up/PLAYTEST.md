@@ -5,10 +5,14 @@
 ## Method
 Two-part QA: (1) **automated** solvability proof of every level via `verify_levels.mjs` (a brute-force search modelling the rust-cascade); (2) **static design/UX review** against the GDD's magic moment. Human on-device retention playtest is the recommended next step before a buyer sends real CPI traffic (see "Buyer-readiness").
 
-## Automated results ✅
-- `node verify_levels.mjs` → **L1, L2, L3 all SOLVABLE** (states explored: 25 / 153 / 986).
-- An earlier L3 was caught as **UNSOLVABLE** (rust deadlock: both starter colours trapped under rusted bolts) and redesigned so colour A is always free to trigger the first cascade. This is exactly the P0 the QA gate exists to catch — an unsolvable level in front of a buyer would have been fatal.
-- JS syntax validated (`node --check`).
+## Automated results ✅ (v2 — meta loop added)
+- **Generator fuzz:** `node verify_levels.mjs` generates 80 difficulty-scaled levels (with rust) and proves **0 unsolvable** — run repeatedly across 240+ levels, always clean. Progression now uses this generator, so content is endless and provably always solvable.
+- **Headless smoke test:** ran the real game JS against a DOM shim and exercised boot, daily reward, start level, tap-move + settle, all three boosters, give-up/lives loss, out-of-lives overlay, ad refill, shop IAP, and the metrics panel — **14/14 interactions, no exceptions thrown.**
+- An earlier hand-built level was caught **UNSOLVABLE** (rust deadlock) before the generator replaced fixed levels — the QA gate working as intended.
+- JS syntax validated (`node --check`, 432 lines).
+
+## Retention loop added (the v2 fix — addresses the "core loop only" gap)
+The slice now ships the full hybrid-casual meta: endless levels → coins → **Restore-the-Workshop** renovation meta (3 chapters) → daily-streak + lives pacing → rewarded ads, interstitials, and an IAP store, all persisted via localStorage. A 📊 publisher-metrics panel surfaces simulated ARPDAU/ad/IAP/retention numbers. This is what makes D1/D7/D30 measurable rather than a one-session toy.
 
 ## Magic-moment verdict
 **Lands (by design), pending feel-tuning on device.** The lock → screwshake → de-rust sparkle chain is implemented and is the intended dopamine beat. The rust mechanic converts a passive "tidy" loop into an active "unlock" loop — the differentiator vs. plain ball-sort.

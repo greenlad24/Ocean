@@ -2,14 +2,18 @@
 
 *owner: finance-analyst · framework: docs/revenue-assurance.md*
 
-## Build cost
+## Build cost (v2 — incl. meta-progression + monetization)
 | Item | Est. |
 |---|---|
-| Engineering (core + juice + 3 verified levels) | ~24 hrs |
-| Design + art-direction (primitives, no asset spend) | ~8 hrs |
-| QA (solver + review) | ~4 hrs |
-| **Total ~36 hrs × $60 blended** | **≈ $2,160** |
+| Engineering — core + juice | ~24 hrs |
+| Engineering — meta loop (level generator, workshop renovation, lives, daily, persistence) | ~22 hrs |
+| Engineering — monetization surface (rewarded/interstitial/IAP store + metrics panel) | ~10 hrs |
+| Design + art-direction (primitives, no asset spend) | ~10 hrs |
+| QA (solver + generator fuzz + headless smoke harness) | ~8 hrs |
+| **Total ~74 hrs × $60 blended** | **≈ $4,440** |
 | Asset / tool spend | **$0** (all code-drawn, royalty-free) |
+
+> Retention note: v1 was a core loop only (no D1/D7). v2 adds the full hybrid-casual meta + monetization, which is what publishers actually price. Demand factor stays 95; build-feasibility now demonstrated end-to-end (generator always-solvable + 14/14 smoke interactions).
 
 ## RAS scorecard
 ```
@@ -42,7 +46,7 @@ RAS floor:                     ≥90%     ✅ GREENLIGHT
 
 ## Walk-away terms (for deal-closer)
 - **Burn-rate retainer:** do not accept below covered monthly cost + 15% margin.
-- **Per-prototype/iteration:** floor of build cost ($2.2k) + $1.4k margin = **$3.6k**; never iterate for free.
+- **Per-prototype/iteration:** floor of build cost ($4.4k) + $1.6k margin = **$6k**; never iterate for free.
 - **Rev-share upside:** accept 50–55%-to-dev structures *as upside only* — never as the basis for greenlighting a build.
 
 ## KPI contribution
