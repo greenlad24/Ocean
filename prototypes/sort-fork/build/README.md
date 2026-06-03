@@ -7,6 +7,7 @@ Zero-install, browser-playable. The lead concept, **rebuilt around an engineered
 ## Run it
 - **Double-click `index.html`** — plays in any browser, no server. Progress saves locally. Audio starts on first tap; 🔊 to mute.
 - Mobile feel: open on a phone or use the browser device toolbar (portrait).
+- **First launch** drops you straight into **Level 1** (no menu) with a one-time **5-step onboarding** that teaches the first moves. It is shown **once, ever** (a saved `onboarded` flag) — returning players go to the menu. (`📊 → Reset save`, then reload, replays it.)
 
 ## The USP (why this isn't v1)
 **"Untangle the chaos — feel the SURGE."** Plain sort puzzles are emotionally flat. This one builds an **anticipation→release** curve: chaining good moves charges a **Flow meter** (rising pitch, brightening board), and clearing outlets in quick succession detonates a **Surge** — a slow-mo, screen-filling, coin-showering peak. That escalation is the differentiator and the ad-creative hook.
@@ -27,7 +28,7 @@ Endless solvable generator · "power up the neighborhood" renovation meta (3 dis
 
 ## QA
 - `node verify_levels.mjs` — generator fuzz, **0 unsolvable** across 100+ levels.
-- `node smoke_test.mjs` — real game JS on a DOM/audio shim; **17/17 interaction paths** incl. a home-phase render guard + the junction-grid path + ~80 driven moves — no exceptions.
+- `node smoke_test.mjs` — real game JS on a DOM/audio shim across **both boot paths** (new-player onboarding + auto Level 1, and returning-player menu incl. the home-phase null-guard regression) — **16/16 checks, no exceptions**.
 
 ## Honest status
 The joy systems are grounded in established design psychology (Tetris/match-3 cascades, ASMR puzzles, peak-end rule), but "this feels good / lifts retention" is a **hypothesis** until a real on-device playtest + a CPI A/B on the Surge ad creative. See JOY.md self-QA.

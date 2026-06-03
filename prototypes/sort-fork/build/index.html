@@ -153,6 +153,13 @@
   <p id="adCount">Reward in 3…</p><button class="btn primary" id="adSkip" style="display:none">Claim reward</button>
 </div></div>
 
+<div class="overlay" id="tutOv"><div class="card">
+  <span class="tag" id="tutStep">How to play · 1 / 5</span>
+  <h2 id="tutTitle">Welcome ⚡</h2>
+  <p id="tutBody"></p>
+  <button class="btn primary" id="tutNext">Next</button>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -195,7 +202,7 @@
     {id:'sp',em:'🎁',name:'Starter pack',desc:'1,500 🪙 +2 each booster',price:4.99,once:true,grant:s=>{s.coins+=1500;s.b.undo+=2;s.b.outlet+=2;s.b.hint+=2;}},
   ];
   const ECPM={rewarded:0.020,inter:0.009};
-  const def=()=>({coins:100,lives:LIFE_MAX,lifeStamp:Date.now(),level:1,bestStars:{},progress:0,b:{undo:1,outlet:1,hint:1},removeAds:false,ownedOnce:{},daily:{last:null,streak:0},muted:false,sim:{adsR:0,adsI:0,iaps:0,rev:0,first:Date.now(),sessions:0,won:0,surges:0}});
+  const def=()=>({coins:100,lives:LIFE_MAX,lifeStamp:Date.now(),level:1,bestStars:{},progress:0,b:{undo:1,outlet:1,hint:1},removeAds:false,ownedOnce:{},daily:{last:null,streak:0},muted:false,onboarded:false,sim:{adsR:0,adsI:0,iaps:0,rev:0,first:Date.now(),sessions:0,won:0,surges:0}});
   let S=load();
   function load(){ try{const r=JSON.parse(localStorage.getItem(SAVE));return r?Object.assign(def(),r):def();}catch(e){return def();} }
   function save(){ try{localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){} }
@@ -428,10 +435,30 @@
   $('btnMetrics').onclick=()=>{ renderMetrics(); show('metricsOv'); };
   $('metricsClose').onclick=()=>hide('metricsOv');
   $('btnMute').onclick=()=>{ S.muted=!S.muted; save(); hud(); };
-  $('metricsReset').onclick=()=>{ if(confirm('Reset save and start as a new player?')){ localStorage.removeItem(SAVE); S=def(); save(); hide('metricsOv'); renderHome(); toast('New player'); } };
+  $('metricsReset').onclick=()=>{ if(confirm('Reset save and start as a new player?')){ localStorage.removeItem(SAVE); S=def(); save(); hide('metricsOv'); renderHome(); toast('New player · reload to replay onboarding'); } };
 
-  S.sim.sessions++; save(); regen(); renderHome();
-  if(dailyAvail()) setTimeout(openDaily,500);
+  // ===== first-run onboarding (shown ONCE, ever) =====
+  const TUT=[
+    {t:'Welcome, electrician ⚡', b:"The city's wiring is a tangled mess. Your job: sort the plugs and switch the power back on. It takes 10 seconds to learn."},
+    {t:'1 · Lift a plug', b:'Tap any outlet to pick up its top plug — it lifts, ready to move.'},
+    {t:'2 · Drop it on a match', b:'Tap another outlet to drop the plug. It only fits on the SAME colour — or into an empty outlet.'},
+    {t:'3 · Power an outlet', b:'Stack 4 of the same colour in one outlet and it SEALS — its cable shoots up to power a device on THE GRID at the top.'},
+    {t:'Goal: POWER THE GRID', b:"Light up every device on the grid to win. Clear outlets back-to-back for a ⚡ SURGE. That's everything — give it a go!"},
+  ];
+  let tutI=0;
+  function renderTut(){ const s=TUT[tutI]; $('tutStep').textContent='How to play · '+(tutI+1)+' / '+TUT.length; $('tutTitle').textContent=s.t; $('tutBody').textContent=s.b; $('tutNext').textContent=tutI===TUT.length-1?'Play! ▶︎':'Next'; }
+  function showTut(){ tutI=0; renderTut(); show('tutOv'); }
+  $('tutNext').onclick=()=>{ if(ac()&&ac().state==='suspended')ac().resume(); sfx.tap(); tutI++; if(tutI>=TUT.length) hide('tutOv'); else renderTut(); };
+
+  // ===== boot =====
+  S.sim.sessions++; regen();
+  if(!S.onboarded){                 // brand-new player: skip the menu, drop straight into level 1 + one-time onboarding
+    S.onboarded=true; save();
+    startLevel(); showTut();
+  } else {
+    save(); renderHome();
+    if(dailyAvail()) setTimeout(openDaily,500);
+  }
   requestAnimationFrame(loop);
 })();
 </script>

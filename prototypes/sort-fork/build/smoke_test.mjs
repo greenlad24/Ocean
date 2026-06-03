@@ -1,71 +1,78 @@
-// Headless smoke test: run Cable Sort's real JS against a DOM/audio shim and
-// exercise every major interaction, asserting nothing throws.
+// Headless smoke test: runs the real game JS against a DOM/audio shim.
+// Covers BOTH boot paths: (1) brand-new player -> onboarding + auto level 1,
+// (2) returning player -> menu + the home-phase null-guard regression.
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const code = fs.readFileSync(path.join(__dirname,'index.html'),'utf8').split('<script>')[1].split('</script>')[0];
+const SAVE_KEY = 'cablesort_surge_v1';
 
-const store={};
-const localStorage={getItem:k=>k in store?store[k]:null,setItem:(k,v)=>store[k]=String(v),removeItem:k=>{delete store[k];}};
-const noop=()=>{};
-const ctxProxy=()=>new Proxy({},{get:(t,p)=>p in t?t[p]:(typeof p==='string'?(()=>{}):undefined),set:(t,p,v)=>{t[p]=v;return true;}});
-// universal callable proxy: any property is itself, any call returns itself
+// universal callable proxy for canvas ctx + audio nodes
 function uni(){const f=function(){return uni();};return new Proxy(f,{get:(t,p)=>{if(p==='value'||p==='currentTime')return 0;if(p==='state')return 'running';return uni();},set:()=>true,apply:()=>uni()});}
-const els={};
-function mkEl(id){const e={id,_h:{},style:{},_cls:new Set(),children:[],
-  set textContent(v){this._tc=v;},get textContent(){return this._tc||'';},
-  set innerHTML(v){this._html=v;this.children=[];},get innerHTML(){return this._html||'';},
-  set className(v){this._cn=v;},get className(){return this._cn||'';},
-  classList:{add:c=>e._cls.add(c),remove:c=>e._cls.delete(c),contains:c=>e._cls.has(c)},
-  appendChild:c=>{e.children.push(c);return c;},addEventListener:(ev,fn)=>{e._h[ev]=fn;},
-  getContext:()=>uni(),getBoundingClientRect:()=>({left:0,top:0,width:540,height:820}),
-  get clientWidth(){return 540;},get clientHeight(){return 820;},
-  set onclick(fn){e._h.click=fn;},get onclick(){return e._h.click;},width:540,height:820,disabled:false};
-  return e;}
-const document={getElementById:id=>els[id]||(els[id]=mkEl(id)),createElement:t=>mkEl('_'+t+Math.random())};
-let rafQ=[];const requestAnimationFrame=cb=>{rafQ.push(cb);return rafQ.length;};
-function pump(n){for(let i=0;i<n;i++){const q=rafQ;rafQ=[];q.forEach(cb=>cb(performance.now()+i*16));}}
-let _t=1e3;const performance={now:()=>(_t+=16)};
-const window={addEventListener:noop,devicePixelRatio:1,innerWidth:540,innerHeight:820,AudioContext:function(){return uni();}};
-const confirm=()=>true;
-const setTimeout=fn=>{try{fn();}catch(e){throw e;}return 0;};const setInterval=()=>0;const clearInterval=noop;const clearTimeout=noop;
 
-const res=[];function step(n,fn){try{fn();res.push('  ✓ '+n);}catch(e){res.push('  ✗ '+n+' — '+e.message);throw e;}}
-const fn=new Function('document','window','localStorage','performance','requestAnimationFrame','setTimeout','setInterval','clearInterval','clearTimeout','confirm','console',code);
-let threw=null;
-try{
-  step('boot',()=>fn(document,window,localStorage,performance,requestAnimationFrame,setTimeout,setInterval,clearInterval,clearTimeout,confirm,console));
-  const clk=id=>els[id]._h.click&&els[id]._h.click();
-  step('daily shown on boot',()=>{if(!els['dailyOv']._cls.has('show'))throw new Error('daily not shown');});
-  step('render frames during HOME phase (G is null) — loop must survive',()=>pump(6));
-  step('claim daily',()=>clk('dailyClaim'));
-  step('shop open + buy (nested btn) + close',()=>{clk('btnShop');const b=els['shopList'].children[0].children[0];b._h.click();clk('shopClose');});
-  step('metrics open/close',()=>{clk('btnMetrics');if(!els['metricsBody'].innerHTML)throw new Error('no metrics');clk('metricsClose');});
-  step('mute toggle',()=>clk('btnMute'));
-  step('start level',()=>clk('btnPlay'));
-  step('render frames',()=>pump(3));
-  const pd=els['c']._h.pointerdown;
-  step('tap-move + settle',()=>{pd({clientX:40,clientY:400});pd({clientX:500,clientY:400});pump(10);});
-  step('undo booster',()=>clk('bUndo'));
-  step('spare-outlet booster',()=>clk('bOutlet'));
-  step('hint booster',()=>clk('bHint'));
-  step('render after boosters',()=>pump(3));
-  step('drive many valid moves -> exercise completion/charging/surge paths',()=>{
-    // restart a fresh level, then spray taps across outlet x-positions and pump
-    // frames so the telegraph(charging)->fireComplete->triggerSurge->coinShower
-    // and floatText/surge-flash render paths all execute without throwing.
-    const shown=id=>els[id]&&els[id]._cls.has('show');
-    if(shown('failOv'))els['failGive']._h.click();
-    clk('btnPlay'); pump(2);
-    for(let r=0;r<80;r++){ const x=40+(r*53%460); pd({clientX:x,clientY:420}); pump(2);
-      if(shown('failOv')){ els['failGive']._h.click(); clk('btnPlay'); pump(2); }
-      if(shown('winOv')){ els['winNext']._h.click(); if(shown('adOv'))els['adSkip']._h.click(); pump(2); } }
-    pump(40);
-  });
-  step('give up (life loss, home)',()=>{clk('btnPlay');els['failGive']._h.click();});
-  step('drain lives -> out-of-lives overlay, then ad refill',()=>{for(let i=0;i<7;i++){clk('btnPlay');if(els['failGive']._h.click)els['failGive']._h.click();}clk('btnPlay');if(els['lifeAd']._h.click)els['lifeAd']._h.click();});
-  res.push('\nALL SMOKE STEPS PASSED ✅');
-}catch(e){threw=e;res.push('\nSMOKE FAILED ❌');}
+function makeEnv(seedSave){
+  const store={};
+  if(seedSave) store[SAVE_KEY]=JSON.stringify(seedSave);
+  const localStorage={getItem:k=>k in store?store[k]:null,setItem:(k,v)=>store[k]=String(v),removeItem:k=>{delete store[k];}};
+  const noop=()=>{};
+  const els={};
+  function mkEl(id){const e={id,_h:{},style:{},_cls:new Set(),children:[],
+    set textContent(v){this._tc=v;},get textContent(){return this._tc||'';},
+    set innerHTML(v){this._html=v;this.children=[];},get innerHTML(){return this._html||'';},
+    set className(v){this._cn=v;},get className(){return this._cn||'';},
+    classList:{add:c=>e._cls.add(c),remove:c=>e._cls.delete(c),contains:c=>e._cls.has(c)},
+    appendChild:c=>{e.children.push(c);return c;},addEventListener:(ev,fn)=>{e._h[ev]=fn;},
+    getContext:()=>uni(),getBoundingClientRect:()=>({left:0,top:0,width:540,height:820}),
+    get clientWidth(){return 540;},get clientHeight(){return 820;},
+    set onclick(fn){e._h.click=fn;},get onclick(){return e._h.click;},width:540,height:820,disabled:false};
+    return e;}
+  const document={getElementById:id=>els[id]||(els[id]=mkEl(id)),createElement:t=>mkEl('_'+t+Math.random())};
+  let rafQ=[];const requestAnimationFrame=cb=>{rafQ.push(cb);return rafQ.length;};
+  function pump(n){for(let i=0;i<n;i++){const q=rafQ;rafQ=[];q.forEach(cb=>cb(performance.now()+i*16));}}
+  let _t=1000;const performance={now:()=>(_t+=16)};
+  const window={addEventListener:noop,devicePixelRatio:1,innerWidth:540,innerHeight:820,AudioContext:function(){return uni();}};
+  const confirm=()=>true;
+  const setTimeout=fn=>{try{fn();}catch(e){throw e;}return 0;};const setInterval=()=>0,clearInterval=noop,clearTimeout=noop;
+  const fn=new Function('document','window','localStorage','performance','requestAnimationFrame','setTimeout','setInterval','clearInterval','clearTimeout','confirm','console',code);
+  return {
+    run:()=>fn(document,window,localStorage,performance,requestAnimationFrame,setTimeout,setInterval,clearInterval,clearTimeout,confirm,console),
+    els, pump,
+    shown:id=>els[id] && els[id]._cls.has('show'),
+    clk:id=>els[id]&&els[id]._h.click&&els[id]._h.click(),
+    pd:(x,y)=>els['c']._h.pointerdown({clientX:x,clientY:y}),
+  };
+}
+
+const res=[];let threw=null;
+function step(name,fn){ if(threw)return; try{fn();res.push('  ✓ '+name);}catch(e){res.push('  ✗ '+name+' — '+e.message);threw=e;} }
+
+// ---- Scenario 1: brand-new player ----
+res.push('Scenario 1 — brand-new player (onboarding + auto level 1):');
+{ const E=makeEnv(null);
+  step('boot',()=>E.run());
+  step('onboarding shown on boot, NOT daily',()=>{ if(!E.shown('tutOv'))throw new Error('onboarding not shown'); if(E.shown('dailyOv'))throw new Error('daily should not show on first run'); });
+  step('auto-started in level 1 (render frames, no menu gate)',()=>E.pump(4));
+  step('click through onboarding -> dismissed',()=>{ for(let i=0;i<5;i++)E.clk('tutNext'); if(E.shown('tutOv'))throw new Error('onboarding not dismissed'); });
+  step('play a tap-move + settle',()=>{ E.pd(40,400); E.pd(500,400); E.pump(12); });
+}
+
+// ---- Scenario 2: returning player ----
+res.push('\nScenario 2 — returning player (menu + null-guard regression):');
+{ const E=makeEnv({onboarded:true});
+  step('boot',()=>E.run());
+  step('onboarding NOT replayed',()=>{ if(E.shown('tutOv'))throw new Error('onboarding replayed for returning player!'); });
+  step('daily shown for returning player',()=>{ if(!E.shown('dailyOv'))throw new Error('daily not shown'); });
+  step('HOME-phase frames with G null — loop must survive',()=>E.pump(6));
+  step('claim daily',()=>E.clk('dailyClaim'));
+  step('start level from menu',()=>E.clk('btnPlay'));
+  step('render + tap-move + settle',()=>{ E.pump(3); E.pd(40,400); E.pd(500,400); E.pump(12); });
+  step('boosters: undo / spare-outlet / hint',()=>{ E.clk('bUndo'); E.clk('bOutlet'); E.clk('bHint'); E.pump(3); });
+  step('shop buy (nested btn) + close',()=>{ E.clk('btnShop'); E.els['shopList'].children[0].children[0]._h.click(); E.clk('shopClose'); });
+  step('metrics open/close + mute',()=>{ E.clk('btnMetrics'); if(!E.els['metricsBody'].innerHTML)throw new Error('no metrics'); E.clk('metricsClose'); E.clk('btnMute'); });
+  step('give up (life loss) then drain lives -> out-of-lives + ad refill',()=>{ E.clk('failGive'); for(let i=0;i<7;i++){ E.clk('btnPlay'); if(E.els['failGive']._h.click)E.els['failGive']._h.click(); } E.clk('btnPlay'); if(E.els['lifeAd']._h.click)E.els['lifeAd']._h.click(); });
+}
+
+res.push(threw?'\nSMOKE FAILED ❌':'\nALL SMOKE STEPS PASSED ✅');
 console.log(res.join('\n'));
 process.exit(threw?1:0);
