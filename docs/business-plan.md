@@ -19,7 +19,13 @@ A **prototype**: a playable vertical slice that proves one magic moment, plus th
 2. **License / co-development** — modest advance + royalty (typ. single-digit to low-double-digit %). Use for high-upside IP we believe in.
 3. **Work-for-hire** — client pays a day rate / fixed scope to build prototypes to their brief. Steady cash that funds paths 1 & 2.
 
-Default portfolio mix early on: **~60% work-for-hire** (keeps lights on) / **~30% outright sales** / **~10% licensing bets** (lottery tickets with upside). Rebalance toward licensing as runway grows.
+Default portfolio mix early on (revised per `docs/niche-research-2026.md`, which showed spec sales are a <1% lottery, not an assured path):
+
+- **~70% contract-backed prototyping** — WFH/co-dev with signed brief + escrow/deposit (the ~90%+ assured engine), specializing in **hybrid-casual puzzle** + advergaming/branded games.
+- **~20% publisher burn-rate / pay-per-prototype retainers** — Azur-style monthly-cost coverage + per-test/iteration payments (Supersonic, Homa). Wage-like income from submitting volume to structured programs.
+- **~10% moonshot lane** — profit-funded only: spec mobile rev-share upside and PC **co-op/crewlike** IP vertical slices (highest upside, lottery odds).
+
+Rebalance toward the moonshot lane only as runway grows past 3 months of burn.
 
 ## 5. Why we win
 - **Throughput, not perfection.** We optimize prototypes shipped per quarter, each with a credible buyer.

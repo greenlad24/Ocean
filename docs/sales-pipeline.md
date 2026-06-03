@@ -35,7 +35,7 @@ Track every prototype as a row:
 
 | Prototype | Stage | Target buyer(s) | Walk-away $ | Expected value | Next action / owner |
 |---|---|---|---|---|---|
-| _(example)_ neon-dash | 4 Playtested | Voodoo, Homa | TBD | $X × p | Set price → finance-analyst |
+| **bolt-up** | 6 Pitched (bootstrap/calling-card) | Rollic, Azur, iKame, Homa | $3.6k/iter or burn-rate +15% | Conversion asset (not booked) | Send outreach + hero GIF → deal-closer; on-device retention test → playtest-qa |
 
 ## Rules of thumb
 - Kill fast: a prototype stuck >2 weeks at one stage with no progress is a NO-GO.

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Bolt Up — Ocean Interactive prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#141a21;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  canvas{touch-action:none;display:block;}
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(10,14,18,.72);backdrop-filter:blur(3px);z-index:10;}
+  .card{background:#222c38;border:1px solid #3a4453;border-radius:18px;padding:26px 24px;
+    width:min(86vw,340px);text-align:center;color:#f2f5f8;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .card h2{margin:.1em 0 .35em;font-size:24px;}
+  .card p{margin:.2em 0 1.1em;color:#aab4c0;font-size:15px;line-height:1.4;}
+  .btn{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;
+    padding:14px;margin:9px 0;font-size:16px;font-weight:700;cursor:pointer;color:#0d1217;}
+  .btn.primary{background:#ffb000;}
+  .btn.ad{background:#3aa0ff;color:#06121f;}
+  .btn.ghost{background:transparent;color:#8b95a2;font-weight:600;border:1px solid #39424f;}
+  .tag{display:inline-block;background:#2e3a48;color:#9fb0c2;font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:10px;}
+  .note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:#5d6b7a;font-size:11px;z-index:5;}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+
+<!-- Stubbed FAIL OFFER — the monetization moment publishers test -->
+<div class="overlay" id="failOverlay">
+  <div class="card">
+    <span class="tag">Stuck</span>
+    <h2>Out of moves!</h2>
+    <p>No legal moves left. Add a spare rod to keep your run alive.</p>
+    <button class="btn primary" id="buyRod">+1 Spare Rod &nbsp;·&nbsp; $0.99</button>
+    <button class="btn ad" id="adRod">Watch ad for a Spare Rod</button>
+    <button class="btn ghost" id="restartLvl">Restart level</button>
+  </div>
+</div>
+
+<!-- WIN -->
+<div class="overlay" id="winOverlay">
+  <div class="card">
+    <span class="tag">Solved</span>
+    <h2 id="winTitle">Level clear!</h2>
+    <p id="winSub">Nice cascade.</p>
+    <button class="btn primary" id="nextLvl">Next level</button>
+  </div>
+</div>
+
+<!-- TITLE -->
+<div class="overlay" id="titleOverlay" style="display:flex">
+  <div class="card">
+    <span class="tag">Ocean Interactive · prototype</span>
+    <h2>BOLT UP</h2>
+    <p>Sort the bolts onto matching rods. Complete a rod to <b>lock</b> it — and <b>de-rust</b> its neighbours. One solve, three unlocks.</p>
+    <button class="btn primary" id="startBtn">Tap to play</button>
+  </div>
+</div>
+
+<div class="note">Prototype build · ads &amp; IAP are stubbed · © Ocean Interactive</div>
+
+<script>
+(() => {
+  "use strict";
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const COLORS = ['#ff5a5f','#ffb000','#2ecc71','#3aa0ff','#a06bff'];
+  const CAP = 4;                 // bolts per rod
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+
+  // ---- Level definitions. Each rod is bottom->top list of {c:colorIdx, r:rusted}. ----
+  // Levels are intentionally hand-built (no generator) per scope guardrails.
+  function L(spec){ return spec.map(r => r.map(b => ({c:b[0], r:!!b[1]}))); }
+  // Levels are hand-built and machine-verified solvable (see verify_levels.mjs).
+  // Bolt spec = [colorIdx, rusted?], rods listed bottom -> top.
+  const LEVELS = [
+    // L1 — teach the pure sort (no rust). 3 colours + 2 empty rods.
+    L([
+      [[0],[0],[0],[2]],
+      [[1],[1],[1],[0]],
+      [[2],[2],[2],[1]],
+      [], [],
+    ]),
+    // L2 — introduce rust; completing a rod de-rusts neighbours. 3 colours + 3 empty.
+    L([
+      [[2],[0],[1],[2]],
+      [[2],[1],[0],[2]],
+      [[1,1],[0,1],[0],[1]],
+      [], [], [],
+    ]),
+    // L3 — full cascade. 4 colours; A is free to complete first. 3 empty rods.
+    L([
+      [[2],[3],[0],[1]],
+      [[0],[3],[2],[1]],
+      [[3],[2],[0],[1]],
+      [[2,1],[3,1],[0],[1]],
+      [], [], [],
+    ]),
+  ];
+
+  // ---- runtime state ----
+  let level=0, rods=[], sel=-1, moves=0;
+  let anims=[], particles=[], shake=0, t=0;
+  let layout=null, locked=false;
+
+  function deepCopy(lv){ return lv.map(r => r.map(b => ({c:b.c, r:b.r}))); }
+  function loadLevel(i){
+    level=i; rods=deepCopy(LEVELS[i]); sel=-1; moves=0; anims=[]; particles=[]; shake=0; locked=false;
+    relayout();
+  }
+
+  // ---- layout ----
+  function relayout(){
+    const W = cv.width/DPR, H = cv.height/DPR;
+    const n = rods.length;
+    const margin = Math.min(W*0.07, 36);
+    const gap = (W - margin*2) / n;
+    const rw = Math.min(gap*0.62, 64);
+    const boltH = Math.min(rw*0.66, (H*0.5)/CAP);
+    const baseY = H*0.78;
+    layout = {W,H,margin,gap,rw,boltH,baseY,
+      rodTop: baseY - boltH*CAP - 14, n};
+  }
+
+  function rodX(i){ return layout.margin + layout.gap*(i+0.5); }
+
+  // ---- rules ----
+  function topMovableIndex(rod){
+    // returns index of top bolt if it's not rusted, else -1 (rusted top blocks)
+    if(rod.length===0) return -1;
+    const top = rod[rod.length-1];
+    return top.r ? -1 : rod.length-1;
+  }
+  function isComplete(rod){
+    if(rod.length!==CAP) return false;
+    const c=rod[0].c;
+    return rod.every(b=>b.c===c && !b.r);
+  }
+  function canMove(from,to){
+    if(from===to) return false;
+    const src=rods[from], dst=rods[to];
+    if(topMovableIndex(src)<0) return false;
+    if(dst.length>=CAP) return false;
+    if(isComplete(dst)) return false;
+    if(dst.length===0) return true;
+    const dt=dst[dst.length-1];
+    if(dt.r) return false;
+    return dt.c===src[src.length-1].c;
+  }
+  function anyMoveExists(){
+    for(let a=0;a<rods.length;a++)
+      for(let b=0;b<rods.length;b++)
+        if(canMove(a,b)) return true;
+    return false;
+  }
+  function isWon(){
+    return rods.every(r => r.length===0 || isComplete(r));
+  }
+
+  // ---- de-rust cascade: completing a rod frees the top rusted bolt on every other rod ----
+  function deRustCascade(exceptRod){
+    let freed=0;
+    rods.forEach((rod,ri)=>{
+      if(ri===exceptRod) return;
+      for(let k=rod.length-1;k>=0;k--){
+        if(rod[k].r){ rod[k].r=false; freed++;
+          spawnSparks(rodX(ri), boltY(rod, k), COLORS[rod[k].c]); break; }
+      }
+    });
+    return freed;
+  }
+
+  function boltY(rod, idx){ return layout.baseY - idx*layout.boltH - layout.boltH/2; }
+
+  // ---- input ----
+  function rodAt(px){
+    for(let i=0;i<rods.length;i++){
+      const x=rodX(i);
+      if(px>=x-layout.gap/2 && px<x+layout.gap/2) return i;
+    }
+    return -1;
+  }
+  function tap(px,py){
+    if(locked) return;
+    const i=rodAt(px); if(i<0) return;
+    if(sel<0){
+      if(topMovableIndex(rods[i])>=0){ sel=i; }
+      return;
+    }
+    if(i===sel){ sel=-1; return; }
+    if(canMove(sel,i)){ doMove(sel,i); sel=-1; }
+    else { // reselect if tapped a rod with a movable bolt
+      sel = topMovableIndex(rods[i])>=0 ? i : -1;
+    }
+  }
+
+  function doMove(from,to){
+    const src=rods[from];
+    const bolt=src.pop();
+    const fromIdx=src.length;           // it was on top
+    rods[to].push(bolt);
+    const toIdx=rods[to].length-1;
+    moves++;
+    // animate the hop
+    anims.push({bolt, fromX:rodX(from), fromY:boltY(src.concat([bolt]),fromIdx),
+                toX:rodX(to), toY:boltY(rods[to],toIdx), t:0, dur:0.16, to, toIdx});
+    locked=true; // brief lock during the hop
+  }
+
+  function settleAfterMove(a){
+    locked=false;
+    // did the destination rod just complete?
+    if(isComplete(rods[a.to])){
+      onRodComplete(a.to);
+    }
+    if(isWon()){ setTimeout(showWin, 380); return; }
+    if(!anyMoveExists()){ setTimeout(()=>showFail(), 260); }
+  }
+
+  function onRodComplete(ri){
+    shake=Math.max(shake,10);
+    burstLock(ri);
+    const freed=deRustCascade(ri);
+    if(freed>0) shake=Math.max(shake,7);
+  }
+
+  // ---- particles ----
+  function spawnSparks(x,y,color){
+    for(let i=0;i<10;i++){
+      const a=Math.random()*Math.PI*2, s=40+Math.random()*120;
+      particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:0,max:.5+Math.random()*.3,color,sz:2+Math.random()*2});
+    }
+  }
+  function burstLock(ri){
+    const x=rodX(ri), y=layout.rodTop;
+    const col=COLORS[rods[ri][0].c];
+    for(let i=0;i<22;i++){
+      const a=Math.random()*Math.PI*2, s=60+Math.random()*200;
+      particles.push({x,y:y+10,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:0,max:.6+Math.random()*.4,color:i%3?col:'#ffe08a',sz:2+Math.random()*3});
+    }
+  }
+
+  // ---- render ----
+  function frame(dt){
+    t+=dt;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    const {W,H}=layout;
+    // bg
+    ctx.fillStyle='#1f2630'; ctx.fillRect(0,0,W,H);
+    drawPegboard(W,H);
+
+    let ox=0, oy=0;
+    if(shake>0){ ox=(Math.random()*2-1)*shake; oy=(Math.random()*2-1)*shake; shake*=Math.pow(0.001,dt); if(shake<0.4)shake=0; }
+    ctx.save(); ctx.translate(ox,oy);
+
+    // HUD
+    ctx.fillStyle='#7d8a99'; ctx.font='600 14px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Level '+(level+1)+' / '+LEVELS.length, layout.margin, 30);
+    ctx.textAlign='right';
+    ctx.fillText('Moves '+moves, W-layout.margin, 30);
+    ctx.textAlign='center';
+
+    // rods
+    for(let i=0;i<rods.length;i++) drawRod(i);
+
+    // flying bolts (animations)
+    for(const a of anims){
+      const e=easeOut(a.t/a.dur);
+      const x=a.fromX+(a.toX-a.fromX)*e;
+      const arc=Math.sin(e*Math.PI)*layout.boltH*1.4;
+      const y=a.fromY+(a.toY-a.fromY)*e-arc;
+      drawBolt(x,y,a.bolt,false,1.0);
+    }
+
+    // particles
+    for(const p of particles){
+      const k=1-p.life/p.max;
+      ctx.globalAlpha=Math.max(0,k);
+      ctx.fillStyle=p.color;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.restore();
+  }
+
+  function drawPegboard(W,H){
+    ctx.fillStyle='#222b35';
+    const r=7, sp=34;
+    for(let y=sp;y<H;y+=sp) for(let x=sp;x<W;x+=sp){
+      ctx.beginPath(); ctx.arc(x,y,2,0,7); ctx.fill();
+    }
+  }
+
+  function drawRod(i){
+    const x=rodX(i), rod=rods[i];
+    const {rw,boltH,baseY,rodTop}=layout;
+    const complete=isComplete(rod);
+    // rod post
+    ctx.fillStyle = sel===i ? '#566273' : '#3a4453';
+    roundRect(x-3, rodTop, 6, baseY-rodTop, 3); ctx.fill();
+    // base plate
+    ctx.fillStyle='#2c3540'; roundRect(x-rw/2-4, baseY-6, rw+8, 12, 5); ctx.fill();
+    // selection lift indicator
+    // bolts (skip the one currently flying from this rod handled separately—anims hold popped bolt)
+    for(let k=0;k<rod.length;k++){
+      const lift = (sel===i && k===rod.length-1 && topMovableIndex(rod)>=0) ? -10 : 0;
+      drawBolt(x, baseY - k*boltH - boltH/2 + lift, rod[k], k===rod.length-1, 1.0);
+    }
+    // gold lock ring if complete
+    if(complete){
+      ctx.strokeStyle='#ffe08a'; ctx.lineWidth=3;
+      roundRect(x-rw/2-7, baseY-CAP*boltH-9, rw+14, CAP*boltH+16, 12); ctx.stroke();
+    }
+  }
+
+  function drawBolt(x,y,bolt,isTop,sc){
+    const rw=layout.rw, h=layout.boltH;
+    const w=rw*sc, hh=h*0.86*sc;
+    const col=COLORS[bolt.c];
+    // hex head
+    ctx.save(); ctx.translate(x,y);
+    ctx.beginPath();
+    for(let s=0;s<6;s++){ const a=Math.PI/6 + s*Math.PI/3; const px=Math.cos(a)*w/2, py=Math.sin(a)*hh/2*1.15;
+      s?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+    ctx.closePath();
+    ctx.fillStyle=col; ctx.fill();
+    // inner highlight
+    ctx.beginPath(); ctx.arc(0,-hh*0.06,w*0.2,0,7);
+    ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fill();
+    // center screw slot
+    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-w*0.16,0); ctx.lineTo(w*0.16,0); ctx.stroke();
+    // rust overlay
+    if(bolt.r){
+      ctx.globalAlpha=.78; ctx.fillStyle='#6e4a28';
+      ctx.beginPath();
+      for(let s=0;s<6;s++){ const a=Math.PI/6 + s*Math.PI/3; const px=Math.cos(a)*w/2, py=Math.sin(a)*hh/2*1.15;
+        s?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); ctx.fill();
+      // hatch
+      ctx.globalAlpha=.5; ctx.strokeStyle='#3a2715'; ctx.lineWidth=1.5;
+      for(let hx=-w/2;hx<w/2;hx+=5){ ctx.beginPath(); ctx.moveTo(hx,-hh/2); ctx.lineTo(hx+hh,hh/2); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      // small lock glyph
+      ctx.fillStyle='#d9c4a0'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
+      ctx.fillText('🔒', 0, 0);
+    }
+    ctx.restore();
+  }
+
+  // ---- helpers ----
+  function easeOut(x){ return 1-Math.pow(1-Math.min(1,x),3); }
+  function roundRect(x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  // ---- main loop ----
+  let last=performance.now();
+  function loop(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    // advance anims
+    for(let i=anims.length-1;i>=0;i--){ const a=anims[i]; a.t+=dt;
+      if(a.t>=a.dur){ anims.splice(i,1); settleAfterMove(a); } }
+    // particles
+    for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.life+=dt;
+      p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=420*dt; if(p.life>=p.max) particles.splice(i,1); }
+    if(layout) frame(dt);
+    requestAnimationFrame(loop);
+  }
+
+  // ---- overlays / flow ----
+  const $=id=>document.getElementById(id);
+  function showWin(){
+    const last = level===LEVELS.length-1;
+    $('winTitle').textContent = last ? 'Prototype complete!' : 'Level clear!';
+    $('winSub').textContent = last
+      ? 'You sorted every board. This is the magic-moment slice buyers test.'
+      : 'Nice cascade. The rust just kept unlocking.';
+    $('nextLvl').textContent = last ? 'Play again' : 'Next level';
+    $('winOverlay').style.display='flex';
+  }
+  function showFail(){ $('failOverlay').style.display='flex'; }
+  function hide(id){ $(id).style.display='none'; }
+
+  $('startBtn').onclick=()=>{ hide('titleOverlay'); loadLevel(0); };
+  $('nextLvl').onclick=()=>{ hide('winOverlay'); loadLevel((level+1)%LEVELS.length); };
+  $('restartLvl').onclick=()=>{ hide('failOverlay'); loadLevel(level); };
+  // Stubbed monetization: both "buy" and "ad" grant a spare rod (the fail-offer mechanic).
+  function grantSpareRod(){ hide('failOverlay'); rods.push([]); relayout(); locked=false; }
+  $('buyRod').onclick=grantSpareRod;
+  $('adRod').onclick=grantSpareRod;
+
+  // ---- canvas sizing & input ----
+  function resize(){
+    const wrap=document.getElementById('wrap');
+    // portrait play area, capped for desktop
+    const aw=Math.min(window.innerWidth, 520);
+    const ah=window.innerHeight;
+    cv.style.width=aw+'px'; cv.style.height=ah+'px';
+    cv.width=aw*DPR; cv.height=ah*DPR;
+    if(rods.length) relayout();
+  }
+  window.addEventListener('resize',resize);
+
+  function pt(e){
+    const r=cv.getBoundingClientRect();
+    const src=e.touches?e.touches[0]:e;
+    return {x:(src.clientX-r.left), y:(src.clientY-r.top)};
+  }
+  cv.addEventListener('pointerdown',e=>{ const p=pt(e); tap(p.x,p.y); });
+
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
