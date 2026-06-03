@@ -21,7 +21,7 @@ Zero-install, browser-playable. The lead concept, **rebuilt around an engineered
 - **Peak-end win** — every level ends on a climax + a **variable bonus** (sometimes ×2/×3) — surprise reward.
 - **Goal-gradient meta** — "1 to light up the district!" messaging near completion.
 
-- **Junction grid (deliver → power the other side)** — completing an outlet **ships its plugs up into a junction box** that **powers a device on the grid above**. The goal is reframed as "POWER THE GRID  N/N": a concrete objective + a per-completion reveal + cause→effect agency. Completed outlets seal (can't be unplugged); solver kept in sync so levels stay provably solvable.
+- **Power a landmark (deliver → light it up)** — completing an outlet **ships its plugs up** to light part of the level's **cartoon landmark** at the top: Level 1 a house, then the Eiffel Tower, a Ferris wheel, a lighthouse, a skyscraper (cycling). Each completion lights another section; powering every outlet fully lights the landmark. A concrete, recognizable goal + per-completion reveal. Completed outlets seal; solver kept in sync so levels stay provably solvable. *(Landmarks are code-drawn — confirm the look in a real browser; the headless tests can't render them.)*
 
 ## Underlying systems (carried over, tested)
 Endless solvable generator · "power up the neighborhood" renovation meta (3 districts) · coins, stars, lives, daily streak, persistence · boosters (Undo / Spare Outlet / Hint) · monetization (rewarded video, capped interstitials, IAP store) · 📊 publisher metrics panel (now also tracks **surges triggered** — the engagement signal to A/B vs. flat sort).

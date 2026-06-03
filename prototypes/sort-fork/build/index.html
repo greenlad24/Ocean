@@ -321,7 +321,7 @@
     coinShower(); }
   function deliver(c){ G.delivered[c]=true; G.devGlow[c]=1; shake=Math.max(shake,6);     // junction box sealed -> device on the other side powers on
     beep(740,.18,'triangle',.09); beep(1110,.14,'sine',.06);
-    for(let i=0;i<12;i++){ const yy=L.devY+Math.random()*(L.boxY-L.devY); parts.push({x:boxX(c)+(Math.random()*2-1)*6,y:yy,vx:(Math.random()*2-1)*26,vy:-50-Math.random()*70,life:0,max:.5+Math.random()*.3,c:i%2?LIGHT[c]:'#fff',s:1.6+Math.random()*2}); } }
+    for(let i=0;i<14;i++){ const yy=L.devY+Math.random()*(L.boxY-L.devY+20); parts.push({x:L.W*0.5+(Math.random()*2-1)*55,y:yy,vx:(Math.random()*2-1)*40,vy:-50-Math.random()*70,life:0,max:.5+Math.random()*.35,c:i%2?LIGHT[c]:'#fff',s:1.6+Math.random()*2.2}); } }
 
   // boosters
   $('bUndo').onclick=()=>useB('undo',()=>{ if(!G.hist.length){toast('Nothing to undo');return false;} G.rods=G.hist.pop(); G.sel=-1; flow=Math.max(0,flow*0.7); return true; });
@@ -364,7 +364,7 @@
     drawGrid(dt);
     for(let i=0;i<G.rods.length;i++) drawOutlet(i,dt);
     for(const a of anims){ const e=easeOut(a.t/a.dur); const x=a.fx+(a.tx-a.fx)*e; const arc=Math.sin(e*Math.PI)*L.slot*1.7; const y=a.fy+(a.ty-a.fy)*e-arc; cable(x,y,colX(a.to),L.baseY+8,a.col,1); plug(x,y,a.col,true); }
-    for(const sh of G.ship){ const e=easeOut(sh.t/sh.dur); const x=sh.fromX+(boxX(sh.c)-sh.fromX)*e; const y=sh.fromY+(L.boxY-sh.fromY)*e-Math.sin(e*Math.PI)*44; plug(x,y,sh.c,true); }
+    for(const sh of G.ship){ const e=easeOut(sh.t/sh.dur); const x=sh.fromX+(L.W*0.5-sh.fromX)*e; const y=sh.fromY+((L.boxY)-sh.fromY)*e-Math.sin(e*Math.PI)*44; plug(x,y,sh.c,true); }
     for(const p of parts){ const k=1-p.life/p.max; ctx.globalAlpha=Math.max(0,k); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,7); ctx.fill(); } ctx.globalAlpha=1;
     ctx.restore();
     // combo / surge text
@@ -376,16 +376,50 @@
     const g=ctx.createLinearGradient(margin,0,margin+w,0); g.addColorStop(0,'#ffb02e'); g.addColorStop(1,flow>0.85?'#fff':'#ffe6a8'); ctx.fillStyle=g; if(flow>0.85){ctx.shadowColor='#ffd36b';ctx.shadowBlur=12;} rr(margin,y,Math.max(2,w*flow),h,4); ctx.fill(); ctx.shadowBlur=0;
     if(combo>1){ ctx.fillStyle='#ffd36b'; ctx.font='900 12px sans-serif'; ctx.textAlign='left'; ctx.fillText('COMBO ×'+combo,margin,y+22); ctx.textAlign='center'; }
     ctx.fillStyle='#6a7896'; ctx.font='700 10px sans-serif'; ctx.textAlign='right'; ctx.fillText('FLOW',W-margin,y-3); ctx.textAlign='center'; }
-  function drawGrid(dt){ const nc=G.numColors; const powered=Object.keys(G.delivered).length;
-    ctx.fillStyle=powered>=nc?'#ffd36b':'#7e90ad'; ctx.font='900 11px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('⚡ POWER THE GRID  '+powered+' / '+nc, L.W/2, L.devY-24);
-    for(let c=0;c<nc;c++){ const dx=boxX(c), lit=!!G.delivered[c], dg=G.devGlow[c]||0, col=COLORS[c], bw=L.bw, by=L.boxY;
-      ctx.strokeStyle=lit?col:'#283350'; ctx.lineWidth=3; if(lit){ctx.shadowColor=col;ctx.shadowBlur=8+dg*22;} ctx.beginPath(); ctx.moveTo(dx,L.devY+11); ctx.lineTo(dx,by-bw*0.42); ctx.stroke(); ctx.shadowBlur=0;
-      ctx.beginPath(); ctx.arc(dx,L.devY,11,0,7); ctx.fillStyle=lit?LIGHT[c]:'#16203a'; if(lit){ctx.shadowColor=col;ctx.shadowBlur=16+dg*28;} ctx.fill(); ctx.shadowBlur=0; ctx.strokeStyle=lit?col:'#34415f'; ctx.lineWidth=2; ctx.stroke();
-      ctx.fillStyle='#101a2e'; rr(dx-bw/2,by-bw*0.42,bw,bw*0.84,8); ctx.fill();
-      ctx.strokeStyle=lit?col:'#3a4760'; ctx.lineWidth=2; if(lit){ctx.shadowColor=col;ctx.shadowBlur=10+dg*14;} rr(dx-bw/2,by-bw*0.42,bw,bw*0.84,8); ctx.stroke(); ctx.shadowBlur=0;
-      if(lit){ for(let k=0;k<CAP;k++){ const px=dx+((k%2)?1:-1)*bw*0.22, py=by+(k<2?-bw*0.16:bw*0.16); ctx.beginPath(); ctx.arc(px,py,bw*0.12,0,7); ctx.fillStyle=col; ctx.fill(); } }
-      else { ctx.fillStyle='#26344f'; ctx.font='900 12px sans-serif'; ctx.fillText('?',dx,by+4); } }
+  // ---- cartoon landmarks that power on, one per level ----
+  function pane(x,y,w,h,on){ ctx.fillStyle=on?'#ffe08a':'#243349'; if(on){ctx.shadowColor='#ffd25a';ctx.shadowBlur=9;} rr(x,y,w,h,Math.min(w,h)*0.25); ctx.fill(); ctx.shadowBlur=0; }
+  function bulb(x,y,r,on,col){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=on?(col||'#ffe08a'):'#2a3a52'; if(on){ctx.shadowColor=col||'#ffd25a';ctx.shadowBlur=12;} ctx.fill(); ctx.shadowBlur=0; }
+  const litN=(frac,total)=>Math.round(frac*total);
+  const LANDMARKS=[
+    {name:'House', draw(cx,by,s,frac){ const w=74*s,h=50*s,x=cx-w/2,y=by-h,N=litN(frac,4);
+      ctx.fillStyle='#ead3a6'; rr(x,y,w,h,3*s); ctx.fill();
+      ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.moveTo(x-7*s,y+2); ctx.lineTo(cx,y-30*s); ctx.lineTo(x+w+7*s,y+2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#8a5a3a'; ctx.fillRect(x+w*0.66,y-26*s,8*s,16*s);
+      ctx.fillStyle='#5a3a1a'; rr(cx-8*s,by-20*s,16*s,20*s,3*s); ctx.fill(); bulb(cx+5*s,by-10*s,1.5*s,frac>0,'#ffd25a');
+      pane(x+9*s,y+9*s,14*s,12*s,N>=1); pane(x+w-23*s,y+9*s,14*s,12*s,N>=2); pane(x+9*s,y+26*s,14*s,12*s,N>=3); pane(x+w-23*s,y+26*s,14*s,12*s,N>=4); }},
+    {name:'Eiffel Tower', draw(cx,by,s,frac){ const H=104*s,top=by-H,bw=46*s,N=litN(frac,6);
+      ctx.strokeStyle='#b58b4e'; ctx.lineWidth=3*s; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx-bw/2,by); ctx.quadraticCurveTo(cx-10*s,by-H*0.5,cx-6*s,top); ctx.lineTo(cx+6*s,top); ctx.quadraticCurveTo(cx+10*s,by-H*0.5,cx+bw/2,by); ctx.stroke();
+      for(const t of [0.16,0.5,0.78]){ const yy=by-H*t, hw=(bw/2)*(1-t*0.8); ctx.beginPath(); ctx.moveTo(cx-hw,yy); ctx.lineTo(cx+hw,yy); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(cx,top); ctx.lineTo(cx,top-8*s); ctx.stroke();
+      for(let i=0;i<6;i++){ const t=i/5, yy=by-8*s-(H-18*s)*t, hw=(bw/2)*(1-t*0.8); bulb(cx-hw,yy,2*s,N>=i+1,'#fff3b0'); bulb(cx+hw,yy,2*s,N>=i+1,'#fff3b0'); }
+      bulb(cx,top-9*s,2.4*s,frac>=1,'#ff6b6b'); }},
+    {name:'Ferris Wheel', draw(cx,by,s,frac){ const R=42*s,cy=by-R-10*s,N=litN(frac,8);
+      ctx.strokeStyle='#5a6b86'; ctx.lineWidth=3*s; ctx.beginPath(); ctx.moveTo(cx-22*s,by); ctx.lineTo(cx,cy); ctx.lineTo(cx+22*s,by); ctx.stroke();
+      ctx.strokeStyle='#8295b2'; ctx.lineWidth=2.5*s; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
+      ctx.lineWidth=1.4*s; for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R); ctx.stroke(); }
+      const cols=['#ff6b6b','#ffd25a','#6bd3ff','#9bff8a']; for(let i=0;i<8;i++){ const a=i/8*Math.PI*2-Math.PI/2; bulb(cx+Math.cos(a)*R,cy+Math.sin(a)*R,3.4*s,N>=i+1,cols[i%4]); }
+      bulb(cx,cy,3*s,frac>=1,'#fff'); }},
+    {name:'Lighthouse', draw(cx,by,s,frac){ const H=92*s,top=by-H,bw=30*s,tw=18*s,N=litN(frac,3);
+      ctx.save(); ctx.beginPath(); ctx.moveTo(cx-bw/2,by); ctx.lineTo(cx-tw/2,top+18*s); ctx.lineTo(cx+tw/2,top+18*s); ctx.lineTo(cx+bw/2,by); ctx.closePath();
+      ctx.fillStyle='#f2f2f2'; ctx.fill(); ctx.clip();
+      ctx.fillStyle='#e23b32'; for(let i=0;i<3;i++) ctx.fillRect(cx-bw/2,by-(i*2+1)*H/6,bw,H/6); ctx.restore();
+      ctx.fillStyle='#3a4a5a'; rr(cx-13*s,top+8*s,26*s,12*s,2*s); ctx.fill();
+      ctx.fillStyle='#27313e'; rr(cx-9*s,top-6*s,18*s,14*s,3*s); ctx.fill(); bulb(cx,top+1*s,4.5*s,frac>=1,'#fff3b0');
+      pane(cx-5*s,by-26*s,10*s,12*s,N>=1); pane(cx-5*s,by-50*s,10*s,12*s,N>=2); pane(cx-4*s,by-70*s,8*s,10*s,N>=3);
+      if(frac>=1){ ctx.fillStyle='rgba(255,243,176,.16)'; ctx.beginPath(); ctx.moveTo(cx,top+1*s); ctx.lineTo(cx+96*s,top-18*s); ctx.lineTo(cx+96*s,top+22*s); ctx.closePath(); ctx.fill(); } }},
+    {name:'Skyscraper', draw(cx,by,s,frac){ const w=52*s,h=106*s,x=cx-w/2,y=by-h,cols=3,rows=7,total=cols*rows,N=litN(frac,total);
+      ctx.fillStyle='#2b3b52'; rr(x,y,w,h,3*s); ctx.fill(); ctx.fillStyle='#1d2a3c'; rr(cx-7*s,y-12*s,14*s,12*s,2*s); ctx.fill(); bulb(cx,y-14*s,1.8*s,frac>=1,'#ff6b6b');
+      let n=0; for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){ const pw=(w-14*s)/cols, ph=(h-16*s)/rows; pane(x+7*s+c*pw,y+8*s+r*ph,pw-3*s,ph-3*s,n<N); n++; } }},
+  ];
+  function drawGrid(dt){ const nc=G.numColors, powered=Object.keys(G.delivered).length, frac=powered/nc, full=powered>=nc;
+    const lm=LANDMARKS[(S.level-1)%LANDMARKS.length];
+    const groundY=L.boxY+30, cx=L.W*0.5, s=Math.min((groundY-58)/112,(L.W*0.6)/92);
+    let g=0; for(const c in G.devGlow) g=Math.max(g,G.devGlow[c]);
+    ctx.strokeStyle='#223046'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(L.margin,groundY+0.5); ctx.lineTo(L.W-L.margin,groundY+0.5); ctx.stroke();
+    if(full||g>0){ ctx.save(); ctx.shadowColor='#ffd87a'; ctx.shadowBlur=18*(full?1:g); lm.draw(cx,groundY,s,frac); ctx.restore(); } else lm.draw(cx,groundY,s,frac);
+    ctx.fillStyle=full?'#ffd36b':'#9fb0c2'; ctx.font='900 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText((full?'⚡ '+lm.name.toUpperCase()+' — POWERED!':'POWER THE '+lm.name.toUpperCase()+'  '+powered+' / '+nc), L.W/2, groundY+18);
     for(const c in G.devGlow){ G.devGlow[c]-=dt*1.6; if(G.devGlow[c]<=0)delete G.devGlow[c]; } }
   function drawOutlet(i,dt){ const x=colX(i),rod=G.rods[i],{sw,slot,baseY,topY}=L,comp=isComplete(rod);
     if(glow[i]!==undefined){ glow[i]-=dt*1.4; if(glow[i]<=0)delete glow[i]; }
@@ -442,8 +476,8 @@
     {t:'Welcome, electrician ⚡', b:"The city's wiring is a tangled mess. Your job: sort the plugs and switch the power back on. It takes 10 seconds to learn."},
     {t:'1 · Lift a plug', b:'Tap any outlet to pick up its top plug — it lifts, ready to move.'},
     {t:'2 · Drop it on a match', b:'Tap another outlet to drop the plug. It only fits on the SAME colour — or into an empty outlet.'},
-    {t:'3 · Power an outlet', b:'Stack 4 of the same colour in one outlet and it SEALS — its cable shoots up to power a device on THE GRID at the top.'},
-    {t:'Goal: POWER THE GRID', b:"Light up every device on the grid to win. Clear outlets back-to-back for a ⚡ SURGE. That's everything — give it a go!"},
+    {t:'3 · Power an outlet', b:'Stack 4 of the same colour in one outlet and it SEALS — its cable shoots up and lights part of the landmark at the top.'},
+    {t:'Goal: light the landmark', b:"Power every outlet to fully light up the level's landmark — a house, the Eiffel Tower, a Ferris wheel and more. Clear outlets back-to-back for a ⚡ SURGE. Go!"},
   ];
   let tutI=0;
   function renderTut(){ const s=TUT[tutI]; $('tutStep').textContent='How to play · '+(tutI+1)+' / '+TUT.length; $('tutTitle').textContent=s.t; $('tutBody').textContent=s.b; $('tutNext').textContent=tutI===TUT.length-1?'Play! ▶︎':'Next'; }
