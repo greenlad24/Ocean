@@ -1,4 +1,7 @@
-# CONCEPT — Mobile sort-puzzle fork (NOT GREENLIT — pre-build)
+# CONCEPT — Mobile sort-puzzle fork (BUILT under founder-authorized exception)
+
+> Status update: the lead concept (**Cable Sort**) was built in `build/` under a deliberate, logged exception to the >90% rule (see `GATES.md`). The gates remain RED; this is a calling-card build, not a >90% greenlight.
+
 
 *owners: game-designer + market-scout · evidence: docs/trend-radar-2026-06.md · ⚠️ no build until >90% confidence is signed off*
 

@@ -37,4 +37,7 @@ No sign-off, or the confidence gate is red → **no build.**
 
 ---
 
-### Status: 🔴 BOTH GATES RED — build not authorised. Next action is `deal-closer` + `market-scout` securing a committed payer, not engineering.
+### Status: 🔴 BOTH GATES RED — build not authorised by the rule.
+
+## ⚠️ EXCEPTION LOG (founder-authorized override)
+On founder instruction, a **deliberate, conscious exception** to the >90% rule was authorised to build the lead concept (Cable Sort) **before** a payer is committed. This is logged honestly: the gates remain RED; revenue confidence is **~25–40%, not >90%**. The build proceeds as a **business-development / calling-card cost**, NOT as a prototype we forecast will be profitable on its own. This does not weaken the rule for any future prototype — it is a one-off, explicitly-recorded founder decision. Build lives in `build/`.
